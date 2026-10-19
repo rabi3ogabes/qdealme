@@ -1,58 +1,97 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# QDealMe · كيو ديل مي
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Smart deals. Zero noise. · عروض ذكية. بلا ضجيج.**
 
-## About Laravel
+QDealMe (qdealme.com) is an Arabic-first, bilingual web app where shoppers in Qatar browse every current supermarket, hypermarket and electronics flyer, and find verified deals, without pop-ups or ad floods. Stores publish their flyers through a secure admin panel.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+See [docs/BRAND.md](docs/BRAND.md) for the slogan shortlist and visual identity.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## What is included
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**For shoppers**
+- Arabic (right-to-left) and English, with matching URLs: `/{ar|en}/qatar/{city}/…`
+- Light, dark and automatic themes, and a choice of 123 or ١٢٣ digits
+- City home with quick filters, a store logo strip, Featured / Latest / Ending soon sorting, and infinite scroll
+- An ad-free flyer viewer: swipe, keyboard arrows, pinch and double-tap zoom, thumbnails, `?page=N` deep links, RTL-aware page direction, tappable verified-price hotspots, share sheet, report a problem
+- Store pages with current, upcoming and past flyers, verified deals, branches and opening hours
+- Verified deals catalogue with category tree, store, price and sort filters, and product pages with unit prices
+- Search that understands Arabic spelling variants (أ/ا/إ, ة/ه, diacritics) and Arabic–English synonyms (ايفون ↔ iPhone), plus a ⌘K / Ctrl+K command palette
+- Accounts: save flyers, follow stores, profile and language settings, delete-my-account
+- About, Contact, Privacy, Terms and "List your store" (creates a lead in the admin)
+- SEO: unique bilingual titles and descriptions, canonical and hreflang tags, Open Graph images, JSON-LD (Organization, WebSite + SearchAction, BreadcrumbList, ItemList, Product/Offer, Store), sitemaps, and `noindex` + HTTP 410 for expired content
 
-## Learning Laravel
+**For the team (admin at `/admin`)**
+- Filament admin in Arabic or English per staff member, with authenticator-app two-factor login and recovery codes
+- Stores and branches, flyer sources (permission records with approve / revoke), flyers, offers, categories, cities, leads, messages and reports
+- Flyer upload: PDF or images → background job rasterises pages and builds WebP/JPEG sizes → review → approve. Flyers publish and expire automatically at Qatar midnight.
+- Offer review queue with one-click and bulk verification (with sanity rules), and a dashboard of what needs attention
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Trust and safety**
+- Flyers can only come from approved sources, enforced in the form, the model, the publish action and a PostgreSQL trigger ([ADR 002](docs/decisions/002-lawful-sourcing.md))
+- Only verified prices appear in deals, search and product pages
+- Rate-limited forms with a honeypot, security headers, no third-party trackers, staff avatars rendered locally
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Requirements
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- PHP 8.3+ with `pdo_pgsql`, `gd` (WebP), `intl`, `mbstring`, `fileinfo`
+- Composer 2, Node.js 20+ and npm
+- PostgreSQL 14+ (16 recommended)
+- `pdftoppm` from Poppler for PDF flyers (`apt install poppler-utils`, `brew install poppler`)
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Local setup
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/rabi3ogabes/qdealme.git && cd qdealme
+composer install
+npm install
+cp .env.example .env            # then set DB_* and ADMIN_PASSWORD
+createdb qdealme                # or create the database in your PostgreSQL tool
+composer setup                  # key, migrate + seed (demo data), storage link
+npm run build
+composer dev                    # web server, queue worker, logs and Vite
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Open http://localhost:8000. You are redirected to `/ar/qatar/doha` (or `/en/...` if your browser prefers English).
 
-## Contributing
+The admin panel is at http://localhost:8000/admin. Log in with `ADMIN_EMAIL` and `ADMIN_PASSWORD` from `.env`; if `ADMIN_PASSWORD` was empty, the seeder prints a generated one. You will be asked to set up an authenticator app on first login (set `ADMIN_REQUIRE_MFA=false` only on your own machine).
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Seeding creates ten **fictional** demo stores with generated flyers, so you can try everything immediately. It takes about two minutes because every page image is processed for real. In production, demo data is skipped unless `SEED_DEMO=true`.
 
-## Code of Conduct
+## Running in production
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. Point your web server's document root at `public/` and run `php artisan storage:link`.
+2. Keep a queue worker running (for example with Supervisor): `php artisan queue:work --tries=2 --timeout=900`
+3. Add the scheduler to cron, which publishes and expires flyers every 15 minutes:
+   `* * * * * cd /path/to/qdealme && php artisan schedule:run >> /dev/null 2>&1`
+4. Raise PHP upload limits for big PDFs: `upload_max_filesize = 100M`, `post_max_size = 100M`. The app limit is `QDEALME_MAX_UPLOAD_MB` (default 80).
+5. Set `APP_ENV=production`, `APP_DEBUG=false`, a real `APP_URL`, and run `php artisan optimize`.
 
-## Security Vulnerabilities
+## Tests
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+The suite runs against a PostgreSQL database named `qdealme_test` (see `phpunit.xml`):
 
-## License
+```bash
+createdb qdealme_test
+php artisan test
+vendor/bin/pint --test
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+It covers flyer scheduling and expiry across Qatar midnight, licence enforcement (including the database trigger), PDF and image processing, the admin create → process → approve workflow, verification rules, search normalisation, SEO tags, both languages, forms, accounts and admin permissions. GitHub Actions runs the same checks on every push (`.github/workflows/ci.yml`).
+
+## Project structure
+
+| Path | What it holds |
+|---|---|
+| `app/Models`, `app/Enums` | Domain models and statuses |
+| `app/Actions/Flyers` | Publish, expire, roll statuses, revoke source |
+| `app/Jobs`, `app/Services` | Upload processing, listing queries |
+| `app/Http/Controllers`, `routes/web.php` | Public site |
+| `app/Filament` | Admin panel |
+| `resources/views`, `resources/js`, `resources/css` | Blade views, Alpine components, design tokens |
+| `lang/ar`, `lang/en` | All interface text |
+| `database/seeders` | Locations, categories, admin user, fictional demo content |
+| `docs/` | Brand guide and architecture decisions |
+
+## Not built yet
+
+These parts of the full roadmap are not in this version: a public JSON API for mobile apps, Meilisearch (search uses PostgreSQL today), automatic product extraction with AI, cross-store product matching and price history, shopping lists, price alerts and push notifications, an installable PWA, social sign-in, a self-serve retailer portal with analytics, paid plans, and coupons.

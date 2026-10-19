@@ -19,9 +19,12 @@ final class Countdown
 
     public static function for(CarbonInterface $validFrom, CarbonInterface $validUntil, ?CarbonInterface $today = null): self
     {
-        $today = CarbonImmutable::instance($today ?? today(config('qdealme.timezone')))->startOfDay();
-        $from = CarbonImmutable::instance($validFrom)->startOfDay();
-        $until = CarbonImmutable::instance($validUntil)->startOfDay();
+        // Compare calendar dates only. "Today" is taken in the shopper's
+        // timezone, while validity dates are plain dates, so each is reduced
+        // to its Y-m-d in its own zone before comparing.
+        $today = self::date($today ?? today(config('qdealme.timezone')));
+        $from = self::date($validFrom);
+        $until = self::date($validUntil);
 
         if ($from->greaterThan($today)) {
             return new self('upcoming', (int) $today->diffInDays($from));
@@ -32,6 +35,11 @@ final class Countdown
         }
 
         return new self('active', (int) $today->diffInDays($until));
+    }
+
+    private static function date(CarbonInterface $value): CarbonImmutable
+    {
+        return CarbonImmutable::createFromFormat('!Y-m-d', $value->format('Y-m-d'), 'UTC');
     }
 
     public function isActive(): bool

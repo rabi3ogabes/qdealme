@@ -2,7 +2,9 @@
 
 namespace App\Enums;
 
-enum RetailerType: string
+use Filament\Support\Contracts\HasLabel;
+
+enum RetailerType: string implements HasLabel
 {
     case Supermarket = 'supermarket';
     case Hypermarket = 'hypermarket';
@@ -33,5 +35,10 @@ enum RetailerType: string
             'home' => [self::Furniture],
             'other' => [self::Other],
         ];
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
     }
 }

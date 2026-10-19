@@ -2,7 +2,10 @@
 
 namespace App\Enums;
 
-enum LicenseStatus: string
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
+
+enum LicenseStatus: string implements HasColor, HasLabel
 {
     case Pending = 'pending';
     case Approved = 'approved';
@@ -20,5 +23,15 @@ enum LicenseStatus: string
             self::Approved => 'success',
             self::Revoked => 'danger',
         };
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
+    }
+
+    public function getColor(): string
+    {
+        return $this->color();
     }
 }

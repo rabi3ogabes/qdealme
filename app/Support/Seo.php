@@ -129,6 +129,11 @@ final class Seo implements Arrayable
         ]);
     }
 
+    private function absolute(string $url): string
+    {
+        return str_starts_with($url, '/') && ! str_starts_with($url, '//') ? url($url) : $url;
+    }
+
     public function toArray(): array
     {
         $canonical = $this->canonical ?? url()->current();
@@ -137,7 +142,7 @@ final class Seo implements Arrayable
             'title' => $this->title ?: brand(),
             'description' => $this->description,
             'canonical' => $canonical,
-            'image' => $this->image ?? asset('images/og-default.png'),
+            'image' => $this->absolute($this->image ?? asset('images/og-default.png')),
             'type' => $this->type,
             'noindex' => $this->noindex,
             'alternates' => $this->alternates,

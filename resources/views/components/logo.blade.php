@@ -1,5 +1,5 @@
 @props(['mono' => false])
-<svg {{ $attributes->merge(['class' => 'h-8 w-auto']) }} viewBox="0 0 168 40" role="img" aria-label="{{ brand() }}" xmlns="http://www.w3.org/2000/svg">
+<svg dir="ltr" {{ $attributes->merge(['class' => 'h-8 w-auto']) }} viewBox="0 0 168 40" role="img" aria-label="{{ brand() }}" xmlns="http://www.w3.org/2000/svg">
     <defs>
         <linearGradient id="qd-g" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="#8e3358"/>
@@ -9,5 +9,5 @@
     <rect x="1" y="1" width="38" height="38" rx="11" fill="{{ $mono ? 'currentColor' : 'url(#qd-g)' }}"/>
     <path d="M20 9.5c5.8 0 10 4.2 10 10 0 2.6-.8 4.9-2.3 6.6l2.6 2.6-2.6 2.6-2.8-2.8c-1.4.7-3.1 1-4.9 1-5.8 0-10-4.2-10-10s4.2-10 10-10Zm0 4.2c-3.4 0-5.7 2.4-5.7 5.8s2.3 5.8 5.7 5.8 5.7-2.4 5.7-5.8-2.3-5.8-5.7-5.8Z" fill="#fff"/>
     <circle cx="31" cy="10" r="3.2" fill="#c9a227"/>
-    <text x="48" y="27" font-family="Readex Pro, system-ui, sans-serif" font-size="20" font-weight="600" fill="currentColor" letter-spacing="-0.3">QDeal<tspan fill="{{ $mono ? 'currentColor' : '#c9a227' }}">Me</tspan></text>
+    <text x="48" y="27" direction="ltr" text-anchor="start" style="direction:ltr;unicode-bidi:bidi-override" font-family="Readex Pro, system-ui, sans-serif" font-size="20" font-weight="600" fill="currentColor" letter-spacing="-0.3">QDeal<tspan fill="{{ $mono ? 'currentColor' : '#c9a227' }}">Me</tspan></text>
 </svg>

@@ -1,0 +1,15 @@
+{
+    "name": "QDealMe",
+    "short_name": "QDealMe",
+    "description": "Smart deals. Zero noise. Every flyer and verified deal in Qatar.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#fbf9f5",
+    "theme_color": "#5e1f38",
+    "lang": "ar",
+    "dir": "rtl",
+    "icons": [
+        { "src": "/images/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "/images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    ]
+}

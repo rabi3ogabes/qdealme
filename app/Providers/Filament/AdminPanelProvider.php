@@ -2,6 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Enums\AdminGroup;
+use App\Filament\Support\InitialsAvatarProvider;
+use App\Filament\Widgets\PlatformStats;
+use App\Http\Middleware\SetAdminLocale;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
+use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -11,7 +17,6 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -28,18 +33,38 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->profile(isSimple: false)
+            ->multiFactorAuthentication(
+                [AppAuthentication::make()->recoverable()->brandName('QDealMe')],
+                isRequired: (bool) config('qdealme.admin_require_mfa'),
+            )
+            ->brandName('QDealMe')
+            ->brandLogo(asset('images/logo.svg'))
+            ->darkModeBrandLogo(asset('images/logo-dark.svg'))
+            ->brandLogoHeight('2rem')
+            ->favicon(asset('favicon.svg'))
+            ->font('Readex Pro', asset('fonts/admin-fonts.css'), LocalFontProvider::class)
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::hex('#8e3358'),
+                'gray' => Color::Stone,
+                'warning' => Color::Amber,
+                'success' => Color::Emerald,
+                'danger' => Color::Rose,
+                'info' => Color::Sky,
             ])
+            ->sidebarCollapsibleOnDesktop()
+            ->navigationGroups(AdminGroup::class)
+            ->defaultAvatarProvider(InitialsAvatarProvider::class)
+            ->databaseNotifications(false)
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
+                PlatformStats::class,
                 AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -54,6 +79,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                SetAdminLocale::class,
             ]);
     }
 }

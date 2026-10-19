@@ -13,12 +13,12 @@
             <li>
                 @if (! empty($item['search']))
                     <button type="button" x-data @click="$dispatch('qd:open-search')" class="flex w-full flex-col items-center gap-1 px-1 py-2.5 text-[11px] font-medium text-muted">
-                        <span class="grid size-9 place-items-center rounded-full bg-primary text-primary-fg shadow-(--shadow-soft)"><x-icon name="search" class="size-5" /></span>
+                        <span class="grid size-9 place-items-center rounded-full bg-primary text-primary-fg shadow-(--shadow-soft)"><x-svg-icon name="search" class="size-5" /></span>
                         <span>{{ $item['label'] }}</span>
                     </button>
                 @else
                     <a href="{{ $item['href'] }}" @class(['flex flex-col items-center gap-1 px-1 py-2.5 text-[11px] font-medium', 'text-primary' => $item['active'], 'text-muted' => ! $item['active']]) @if ($item['active']) aria-current="page" @endif>
-                        <span @class(['grid size-9 place-items-center rounded-full transition-colors', 'bg-primary-soft' => $item['active']])><x-icon :name="$item['icon']" class="size-5" /></span>
+                        <span @class(['grid size-9 place-items-center rounded-full transition-colors', 'bg-primary-soft' => $item['active']])><x-svg-icon :name="$item['icon']" class="size-5" /></span>
                         <span>{{ $item['label'] }}</span>
                     </a>
                 @endif

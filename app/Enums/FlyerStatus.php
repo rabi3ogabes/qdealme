@@ -2,7 +2,10 @@
 
 namespace App\Enums;
 
-enum FlyerStatus: string
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
+
+enum FlyerStatus: string implements HasColor, HasLabel
 {
     case Draft = 'draft';
     case Processing = 'processing';
@@ -35,5 +38,15 @@ enum FlyerStatus: string
     public function isPublic(): bool
     {
         return in_array($this, [self::Published, self::Expired], true);
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
+    }
+
+    public function getColor(): string
+    {
+        return $this->color();
     }
 }

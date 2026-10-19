@@ -2,7 +2,9 @@
 
 namespace App\Enums;
 
-enum UserRole: string
+use Filament\Support\Contracts\HasLabel;
+
+enum UserRole: string implements HasLabel
 {
     case SuperAdmin = 'super_admin';
     case ContentAdmin = 'content_admin';
@@ -17,5 +19,10 @@ enum UserRole: string
     public function isStaff(): bool
     {
         return $this !== self::Shopper;
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
     }
 }

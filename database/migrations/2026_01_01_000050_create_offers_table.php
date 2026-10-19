@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('size_unit', 12)->nullable();
             $table->decimal('unit_price', 12, 4)->nullable();
             $table->string('unit', 12)->nullable();
-            $table->json('bbox')->nullable();
+            $table->jsonb('bbox')->nullable();
             $table->string('crop_path')->nullable();
             $table->text('search_index')->nullable();
             $table->string('verification', 16)->default('unverified')->index();

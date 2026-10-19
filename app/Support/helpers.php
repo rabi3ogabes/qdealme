@@ -59,13 +59,15 @@ if (! function_exists('localized_url')) {
     {
         $route = Route::current();
 
-        if ($route === null || ! $route->hasParameter('locale')) {
+        // Localised routes all start with {locale}; the locale middleware
+        // removes the prefix parameters, so check the URI pattern instead.
+        if ($route === null || $route->getName() === null || ! str_starts_with($route->uri(), '{locale}')) {
             return route('home.redirect', ['locale' => $locale]);
         }
 
         $params = array_merge($route->parameters(), ['locale' => $locale]);
 
-        $url = route($route->getName() ?? 'offers.index', $params);
+        $url = route($route->getName(), $params);
         $query = request()->getQueryString();
 
         return $query ? $url.'?'.$query : $url;
@@ -166,5 +168,33 @@ if (! function_exists('brand')) {
     function brand(string $key = 'name'): string
     {
         return (string) config('qdealme.brand.'.$key);
+    }
+}
+
+if (! function_exists('admin_field')) {
+    /**
+     * Translated admin field label.
+     */
+    function admin_field(string $key): string
+    {
+        return __('admin.fields.'.$key);
+    }
+}
+
+if (! function_exists('city_route_params')) {
+    /**
+     * The {locale}/{country}/{city} parameters for building public URLs,
+     * taken from the current request when there is one and otherwise from
+     * the configured defaults (queues, console, tests).
+     *
+     * @return array{locale: string, country: string, city: string}
+     */
+    function city_route_params(?string $locale = null): array
+    {
+        return [
+            'locale' => $locale ?? (array_key_exists(app()->getLocale(), config('qdealme.locales')) ? app()->getLocale() : config('qdealme.default_locale')),
+            'country' => current_country()?->slug ?? config('qdealme.default_country'),
+            'city' => current_city()?->slug ?? config('qdealme.default_city'),
+        ];
     }
 }

@@ -7,7 +7,7 @@
     @if ($actionHref)
         <a href="{{ $actionHref }}" class="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary hover:underline">
             {{ $actionLabel ?? __('ui.view_all') }}
-            <x-icon name="arrow-right" class="size-4 rtl:-scale-x-100" />
+            <x-svg-icon name="arrow-right" class="size-4 rtl:-scale-x-100" />
         </a>
     @endif
     {{ $slot }}

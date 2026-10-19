@@ -38,7 +38,7 @@ return new class extends Migration
             $table->string('shop_online_url')->nullable();
             $table->string('whatsapp_order_url')->nullable();
             $table->string('upload_path')->nullable();
-            $table->json('upload_files')->nullable();
+            $table->jsonb('upload_files')->nullable();
             $table->text('processing_error')->nullable();
             $table->text('search_index')->nullable();
             $table->unsignedInteger('view_count')->default(0);
@@ -71,7 +71,7 @@ return new class extends Migration
             $table->string('original_path');
             $table->unsignedInteger('width')->nullable();
             $table->unsignedInteger('height')->nullable();
-            $table->json('derivatives')->nullable();
+            $table->jsonb('derivatives')->nullable();
             $table->text('ocr_text')->nullable();
             $table->timestamps();
 

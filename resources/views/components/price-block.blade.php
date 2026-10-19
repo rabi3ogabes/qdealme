@@ -1,6 +1,6 @@
 @props(['offer', 'size' => 'md'])
 @php
-    $saving = $offer->saving();
+    $saving = $offer->savingAmount();
     $percent = $offer->savingPercent();
     $big = $size === 'lg' ? 'text-3xl' : 'text-xl';
 @endphp
@@ -9,7 +9,7 @@
     @if ($offer->old_price && $saving)
         <span class="price text-sm text-muted line-through" dir="ltr">{{ fmt_price($offer->old_price) }}</span>
         @if ($percent)
-            <x-badge tone="accent" size="xs">-{{ fmt_number($percent) }}%</x-badge>
+            <x-badge tone="accent" size="xs" dir="ltr">-{{ fmt_number($percent) }}%</x-badge>
         @endif
     @endif
     @if ($offer->unit_price && $offer->unit && $size === 'lg')

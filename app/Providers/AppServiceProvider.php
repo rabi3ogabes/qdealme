@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Category;
 use App\Models\City;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\View;
@@ -25,13 +26,13 @@ class AppServiceProvider extends ServiceProvider
             ? Password::min(8)->mixedCase()->numbers()
             : Password::min(8));
 
-        View::composer('layouts.app', function (\Illuminate\View\View $view): void {
+        View::composer(['components.city-picker', 'components.app-header'], function (\Illuminate\View\View $view): void {
             $country = current_country();
 
             $view->with('navCities', $country ? $country->cities()->active()->get() : City::query()->active()->get());
             $view->with('navCategories', Category::query()->roots()->get());
         });
 
-        Date::use(\Carbon\CarbonImmutable::class);
+        Date::use(CarbonImmutable::class);
     }
 }

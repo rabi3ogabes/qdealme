@@ -204,14 +204,10 @@ class Flyer extends Model
 
     public function url(int $page = 1, ?string $locale = null): string
     {
-        $params = ['retailer' => $this->retailer->slug, 'flyer' => $this->routeSegment()];
+        $params = city_route_params($locale) + ['retailer' => $this->retailer->slug, 'flyer' => $this->routeSegment()];
 
         if ($page > 1) {
             $params['page'] = $page;
-        }
-
-        if ($locale) {
-            $params['locale'] = $locale;
         }
 
         return route('flyers.show', $params);

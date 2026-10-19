@@ -92,7 +92,7 @@ class Offer extends Model
         return $this->verification === Verification::Verified;
     }
 
-    public function saving(): ?float
+    public function savingAmount(): ?float
     {
         if ($this->old_price === null || (float) $this->old_price <= (float) $this->price) {
             return null;
@@ -103,7 +103,7 @@ class Offer extends Model
 
     public function savingPercent(): ?int
     {
-        $saving = $this->saving();
+        $saving = $this->savingAmount();
 
         if ($saving === null || (float) $this->old_price <= 0) {
             return null;

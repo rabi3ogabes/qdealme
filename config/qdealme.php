@@ -72,4 +72,16 @@ return [
     'pdftoppm_binary' => env('QDEALME_PDFTOPPM', 'pdftoppm'),
 
     'max_upload_mb' => (int) env('QDEALME_MAX_UPLOAD_MB', 80),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin security
+    |--------------------------------------------------------------------------
+    |
+    | Staff must set up an authenticator app (with recovery codes) before
+    | they can use the admin panel.
+    |
+    */
+
+    'admin_require_mfa' => (bool) env('ADMIN_REQUIRE_MFA', true),
 ];

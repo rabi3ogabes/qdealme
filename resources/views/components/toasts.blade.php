@@ -4,11 +4,11 @@
              class="pointer-events-auto flex max-w-md items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-sm shadow-(--shadow-lift)"
              :class="item.tone === 'danger' ? 'text-danger' : 'text-text'">
             <span class="grid size-7 shrink-0 place-items-center rounded-full" :class="item.tone === 'danger' ? 'bg-danger-soft' : 'bg-success-soft text-success'">
-                <x-icon name="check" class="size-4" x-show="item.tone !== 'danger'" />
-                <x-icon name="info" class="size-4" x-show="item.tone === 'danger'" />
+                <x-svg-icon name="check" class="size-4" x-show="item.tone !== 'danger'" />
+                <x-svg-icon name="info" class="size-4" x-show="item.tone === 'danger'" />
             </span>
             <span x-text="item.message"></span>
-            <button type="button" @click="dismiss(item.id)" class="ms-1 text-muted hover:text-text" aria-label="{{ __('nav.close') }}"><x-icon name="x" class="size-4" /></button>
+            <button type="button" @click="dismiss(item.id)" class="ms-1 text-muted hover:text-text" aria-label="{{ __('nav.close') }}"><x-svg-icon name="x" class="size-4" /></button>
         </div>
     </template>
 </div>

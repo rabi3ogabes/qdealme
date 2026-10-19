@@ -41,6 +41,7 @@ class SitemapController extends Controller
             'stores' => $this->stores($cityModel),
             'flyers' => $this->flyers($cityModel),
             'deals' => $this->deals(),
+            default => abort(404),
         };
 
         return response()->view('sitemaps.urlset', ['urls' => $urls])

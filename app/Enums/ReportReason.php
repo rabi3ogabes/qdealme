@@ -2,7 +2,9 @@
 
 namespace App\Enums;
 
-enum ReportReason: string
+use Filament\Support\Contracts\HasLabel;
+
+enum ReportReason: string implements HasLabel
 {
     case WrongPrice = 'wrong_price';
     case Expired = 'expired';
@@ -13,5 +15,10 @@ enum ReportReason: string
     public function label(): string
     {
         return __('report.reason.'.$this->value);
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
     }
 }

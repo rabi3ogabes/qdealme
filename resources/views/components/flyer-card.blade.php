@@ -14,7 +14,7 @@
                  loading="{{ $eager ? 'eager' : 'lazy' }}" decoding="async"
                  class="h-full w-full object-cover transition-transform duration-500 ease-(--ease-out-soft) group-hover:scale-[1.03]">
         @else
-            <div class="grid h-full place-items-center text-muted"><x-icon name="photo" class="size-10" /></div>
+            <div class="grid h-full place-items-center text-muted"><x-svg-icon name="photo" class="size-10" /></div>
         @endif
 
         <div class="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5">
@@ -44,7 +44,7 @@
             </div>
         </div>
         <div class="mt-auto flex items-center justify-between gap-2 text-xs text-muted">
-            <span class="inline-flex items-center gap-1"><x-icon name="document" class="size-3.5" />{{ trans_choice('ui.pages', $flyer->page_count, ['count' => fmt_number($flyer->page_count)]) }}</span>
+            <span class="inline-flex items-center gap-1"><x-svg-icon name="document" class="size-3.5" />{{ trans_choice('ui.pages', $flyer->page_count, ['count' => fmt_number($flyer->page_count)]) }}</span>
             <x-countdown-chip :countdown="$countdown" class="relative z-10" />
         </div>
     </div>

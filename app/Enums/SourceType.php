@@ -2,7 +2,9 @@
 
 namespace App\Enums;
 
-enum SourceType: string
+use Filament\Support\Contracts\HasLabel;
+
+enum SourceType: string implements HasLabel
 {
     case RetailerUpload = 'retailer_upload';
     case AdminUpload = 'admin_upload';
@@ -11,5 +13,10 @@ enum SourceType: string
     public function label(): string
     {
         return __('source.type.'.$this->value);
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
     }
 }

@@ -39,9 +39,23 @@ trait Searchable
 
         return $query->where(function (Builder $q) use ($variants): void {
             foreach ($variants as $variant) {
-                foreach (preg_split('/\s+/', $variant, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
-                    $q->orWhere($this->getTable().'.search_index', 'like', '%'.addcslashes($word, '%_\\').'%');
-                }
+                $words = preg_split('/\s+/u', $variant, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+                // Every word must match the start of a word in the index
+                // (optionally after the Arabic article "ال"), so "rice"
+                // finds "Basmati Rice" but not "Prices".
+                $q->orWhere(function (Builder $all) use ($words): void {
+                    foreach ($words as $word) {
+                        $w = addcslashes($word, '%_\\');
+                        $column = $this->getTable().'.search_index';
+
+                        $all->where(fn (Builder $one) => $one
+                            ->where($column, 'like', $w.'%')
+                            ->orWhere($column, 'like', '% '.$w.'%')
+                            ->orWhere($column, 'like', 'ال'.$w.'%')
+                            ->orWhere($column, 'like', '% ال'.$w.'%'));
+                    }
+                });
             }
         });
     }

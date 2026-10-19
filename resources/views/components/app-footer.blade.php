@@ -5,7 +5,7 @@
                 <x-logo class="h-9 w-auto" />
                 <p class="mt-4 max-w-md text-sm leading-6 text-text-2">{{ __('brand.footer_tagline') }}</p>
                 <p class="mt-5 inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent-fg">
-                    <x-icon name="sparkles" class="size-4" />
+                    <x-svg-icon name="sparkles" class="size-4" />
                     {{ __('brand.slogan') }}
                 </p>
             </div>
@@ -37,7 +37,7 @@
         </div>
         <div class="hairline mt-10 flex flex-col gap-3 pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
             <p>{{ __('brand.rights', ['year' => fmt_number(now()->year), 'brand' => brand()]) }}</p>
-            <p class="inline-flex items-center gap-1.5"><x-icon name="heart" class="size-3.5 text-primary" /> {{ __('brand.made_in') }}</p>
+            <p class="inline-flex items-center gap-1.5"><x-svg-icon name="heart" class="size-3.5 text-primary" /> {{ __('brand.made_in') }}</p>
         </div>
     </div>
 </footer>

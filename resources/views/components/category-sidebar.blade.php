@@ -11,12 +11,12 @@
                 <a href="{{ route('deals.category', $root) }}" @class(['flex-1 rounded-xl px-3 py-2 text-sm font-semibold', 'bg-primary-soft text-primary' => $current?->id === $root->id, 'hover:bg-surface-2' => $current?->id !== $root->id])>{{ $root->name }}</a>
                 @if ($root->children->isNotEmpty())
                     <button type="button" @click="open = !open" class="grid size-9 place-items-center rounded-lg text-muted hover:bg-surface-2" :aria-expanded="open" aria-label="{{ $root->name }}">
-                        <x-icon name="chevron-down" class="size-4 transition-transform" x-bind:class="open ? 'rotate-180' : ''" />
+                        <x-svg-icon name="chevron-down" class="size-4 transition-transform" x-bind:class="open ? 'rotate-180' : ''" />
                     </button>
                 @endif
             </div>
             @if ($root->children->isNotEmpty())
-                <ul x-show="open" x-collapse class="ms-3 border-s border-border ps-2">
+                <ul x-show="open" class="ms-3 border-s border-border ps-2">
                     @foreach ($root->children as $child)
                         <li>
                             <a href="{{ route('deals.category', $child) }}" @class(['block rounded-lg px-3 py-1.5 text-sm', 'bg-primary-soft font-semibold text-primary' => $current?->id === $child->id, 'text-text-2 hover:bg-surface-2 hover:text-text' => $current?->id !== $child->id])>{{ $child->name }}</a>

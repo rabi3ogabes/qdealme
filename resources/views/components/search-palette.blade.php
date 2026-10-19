@@ -4,14 +4,14 @@
     <div class="absolute inset-0 bg-overlay" @click="hide()" x-transition.opacity></div>
     <div x-show="open" x-transition.origin.top x-trap.noscroll.inert="open" class="absolute inset-x-0 top-0 mx-auto flex max-h-dvh w-full max-w-2xl flex-col overflow-hidden bg-surface shadow-(--shadow-lift) md:top-[8vh] md:max-h-[80vh] md:rounded-3xl">
         <form @submit.prevent="submit()" class="flex items-center gap-3 border-b border-border px-4 py-3" role="search">
-            <x-icon name="search" class="size-5 shrink-0 text-muted" />
+            <x-svg-icon name="search" class="size-5 shrink-0 text-muted" />
             <input x-ref="input" x-model="query" @input="onInput()" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" @keydown.escape.prevent="hide()"
                    type="search" enterkeyhint="search" autocomplete="off" spellcheck="false"
                    class="h-11 flex-1 bg-transparent text-base outline-none placeholder:text-muted"
                    placeholder="{{ __('ui.search_placeholder') }}" aria-label="{{ __('nav.search') }}"
                    role="combobox" :aria-expanded="hasResults" aria-controls="search-results" aria-autocomplete="list">
             <span x-show="loading" class="size-4 animate-spin rounded-full border-2 border-border border-t-primary" aria-hidden="true"></span>
-            <button type="button" @click="hide()" class="grid size-9 place-items-center rounded-full text-muted hover:bg-surface-2" aria-label="{{ __('nav.close') }}"><x-icon name="x" class="size-5" /></button>
+            <button type="button" @click="hide()" class="grid size-9 place-items-center rounded-full text-muted hover:bg-surface-2" aria-label="{{ __('nav.close') }}"><x-svg-icon name="x" class="size-5" /></button>
         </form>
 
         <div id="search-results" class="flex-1 overflow-y-auto p-2" role="listbox">
@@ -41,7 +41,7 @@
                                class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors"
                                :class="active === indexOf('{{ $group }}', i) ? 'bg-primary-soft text-primary' : 'hover:bg-surface-2'">
                                 <template x-if="item.image"><img :src="item.image" alt="" class="size-9 shrink-0 rounded-lg border border-border object-cover"></template>
-                                <template x-if="!item.image"><span class="grid size-9 shrink-0 place-items-center rounded-lg bg-surface-2 text-muted"><x-icon name="tag" class="size-4" /></span></template>
+                                <template x-if="!item.image"><span class="grid size-9 shrink-0 place-items-center rounded-lg bg-surface-2 text-muted"><x-svg-icon name="tag" class="size-4" /></span></template>
                                 <span class="min-w-0 flex-1">
                                     <span class="block truncate font-medium" x-text="item.title"></span>
                                     <span class="block truncate text-xs text-muted" x-text="item.subtitle"></span>
@@ -54,7 +54,7 @@
 
             <template x-if="more && hasResults">
                 <a :href="more" class="mt-1 flex items-center justify-center gap-2 rounded-xl border border-border px-3 py-3 text-sm font-semibold text-primary hover:bg-surface-2">
-                    {{ __('ui.see_all') }} <x-icon name="arrow-right" class="size-4 rtl:-scale-x-100" />
+                    {{ __('ui.see_all') }} <x-svg-icon name="arrow-right" class="size-4 rtl:-scale-x-100" />
                 </a>
             </template>
         </div>

@@ -2,7 +2,10 @@
 
 namespace App\Enums;
 
-enum Verification: string
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
+
+enum Verification: string implements HasColor, HasLabel
 {
     case Unverified = 'unverified';
     case Verified = 'verified';
@@ -20,5 +23,15 @@ enum Verification: string
             self::Verified => 'success',
             self::Rejected => 'danger',
         };
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
+    }
+
+    public function getColor(): string
+    {
+        return $this->color();
     }
 }

@@ -220,8 +220,9 @@ export function flyerViewer({ pages, start = 1, rtl = false, offersByPage = {}, 
 
         clamp() {
             const stage = this.$refs.stage.getBoundingClientRect();
-            const img = this.$refs.image?.getBoundingClientRect();
-            if (!img) return;
+            const el = this.$refs.stage.querySelector(`[data-page="${this.current}"] img`);
+            if (!el) return;
+            const img = el.getBoundingClientRect();
             const halfW = Math.max(0, (img.width - stage.width) / 2);
             const halfH = Math.max(0, (img.height - stage.height) / 2);
             this.tx = Math.min(halfW, Math.max(-halfW, this.tx));
