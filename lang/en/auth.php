@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'failed' => 'These credentials do not match our records.',
+    'password' => 'The provided password is incorrect.',
+    'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
+    'login' => 'Log in',
+    'register' => 'Create account',
+    'login_meta' => 'Log in to save flyers, follow stores and get alerts.',
+    'register_meta' => 'Create a free account to save flyers and follow your favourite stores.',
+    'welcome_back' => 'Welcome back, :name.',
+    'registered' => 'Welcome, :name. Your account is ready.',
+    'logged_out' => 'You have been logged out.',
+    'email' => 'Email',
+    'password_label' => 'Password',
+    'password_confirmation' => 'Confirm password',
+    'remember' => 'Keep me signed in',
+    'name' => 'Your name',
+    'no_account' => 'New here?',
+    'have_account' => 'Already have an account?',
+    'marketing_opt_in' => 'Send me the weekly best-deals email',
+    'create_account' => 'Create your free account',
+    'sign_in' => 'Sign in',
+    'login_title' => 'Welcome back',
+    'login_text' => 'Sign in to your saved flyers and followed stores.',
+    'register_title' => 'Join :brand',
+    'register_text' => 'Free forever. No spam, ever.',
+];

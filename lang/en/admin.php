@@ -1,0 +1,30 @@
+<?php
+
+return [
+    'groups' => [
+        'content' => 'Content',
+        'catalog' => 'Catalogue',
+        'locations' => 'Locations',
+        'inbox' => 'Inbox',
+        'people' => 'People',
+    ],
+    'flyer_in_review' => 'In review',
+    'expiring_today' => 'Expiring today',
+    'published_flyers' => 'Published flyers',
+    'failed_processing' => 'Failed processing',
+    'new_leads' => 'New store leads',
+    'open_reports' => 'Open reports',
+    'unverified_offers' => 'Offers awaiting verification',
+    'approve' => 'Approve & publish',
+    'approve_source' => 'Approve licence',
+    'revoke_source' => 'Revoke licence',
+    'reprocess' => 'Reprocess upload',
+    'archive' => 'Archive',
+    'verify' => 'Mark verified',
+    'reject' => 'Reject',
+    'approved_notice' => 'Flyer approved. It will publish automatically at its start date.',
+    'published_notice' => 'Flyer published.',
+    'reprocess_notice' => 'The upload has been queued for processing.',
+    'source_help' => 'Only sources with an approved licence can be selected. This is enforced in code.',
+    'upload_help' => 'Upload one PDF or several page images (JPG, PNG, WebP). Pages are generated in the background.',
+];

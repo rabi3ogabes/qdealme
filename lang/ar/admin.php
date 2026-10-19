@@ -1,0 +1,30 @@
+<?php
+
+return [
+    'groups' => [
+        'content' => 'المحتوى',
+        'catalog' => 'الكتالوج',
+        'locations' => 'المواقع',
+        'inbox' => 'الوارد',
+        'people' => 'الأشخاص',
+    ],
+    'flyer_in_review' => 'قيد المراجعة',
+    'expiring_today' => 'تنتهي اليوم',
+    'published_flyers' => 'النشرات المنشورة',
+    'failed_processing' => 'فشل في المعالجة',
+    'new_leads' => 'طلبات متاجر جديدة',
+    'open_reports' => 'بلاغات مفتوحة',
+    'unverified_offers' => 'عروض بانتظار التحقق',
+    'approve' => 'اعتماد ونشر',
+    'approve_source' => 'اعتماد الترخيص',
+    'revoke_source' => 'إلغاء الترخيص',
+    'reprocess' => 'إعادة معالجة الملف',
+    'archive' => 'أرشفة',
+    'verify' => 'وسم كموثّق',
+    'reject' => 'رفض',
+    'approved_notice' => 'تم اعتماد النشرة. ستُنشر تلقائياً في تاريخ بدايتها.',
+    'published_notice' => 'تم نشر النشرة.',
+    'reprocess_notice' => 'تمت جدولة الملف للمعالجة.',
+    'source_help' => 'يمكن اختيار المصادر ذات الترخيص المعتمد فقط. هذا مفروض برمجياً.',
+    'upload_help' => 'ارفع ملف PDF واحداً أو عدة صور للصفحات (JPG, PNG, WebP). تُنشأ الصفحات في الخلفية.',
+];
