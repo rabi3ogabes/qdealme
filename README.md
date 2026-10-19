@@ -40,6 +40,8 @@ See [docs/BRAND.md](docs/BRAND.md) for the slogan shortlist and visual identity.
 
 ## Local setup
 
+New to Laravel? Follow the step-by-step guide for Windows and Mac: [docs/RUN-LOCALLY.md](docs/RUN-LOCALLY.md).
+
 ```bash
 git clone https://github.com/rabi3ogabes/qdealme.git && cd qdealme
 composer install
