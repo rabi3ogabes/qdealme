@@ -22,8 +22,8 @@
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
-    <link rel="preload" href="{{ asset('fonts/readex-pro-arabic.woff2') }}" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="{{ asset('fonts/readex-pro-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ Vite::asset('resources/fonts/readex-pro-arabic.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ Vite::asset('resources/fonts/readex-pro-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     {{ $head ?? '' }}
 </head>

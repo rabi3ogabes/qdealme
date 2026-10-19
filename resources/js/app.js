@@ -10,6 +10,9 @@ import { toast } from './components/toast';
 import { sheet } from './components/sheet';
 import { logoStrip } from './components/logoStrip';
 
+// Register self-hosted fonts with Vite so Blade can preload them with Vite::asset().
+import.meta.glob(['../fonts/**']);
+
 Alpine.plugin(focus);
 
 Alpine.data('theme', theme);
