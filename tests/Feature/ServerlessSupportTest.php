@@ -27,6 +27,52 @@ class ServerlessSupportTest extends TestCase
         return $flyer;
     }
 
+    /**
+     * Run a callback with environment variables overridden everywhere env()
+     * looks ($_SERVER, $_ENV and getenv), so values loaded from .env cannot
+     * shadow them, then restore the previous values.
+     */
+    private function withEnvironment(array $vars, callable $callback): mixed
+    {
+        $previous = [];
+
+        foreach ($vars as $name => $value) {
+            $previous[$name] = [$_SERVER[$name] ?? null, $_ENV[$name] ?? null, getenv($name)];
+            $this->setEnvironmentValue($name, $value);
+        }
+
+        try {
+            return $callback();
+        } finally {
+            foreach ($previous as $name => [$server, $env, $process]) {
+                $this->setEnvironmentValue($name, $process === false ? null : $process);
+                unset($_SERVER[$name], $_ENV[$name]);
+
+                if ($server !== null) {
+                    $_SERVER[$name] = $server;
+                }
+
+                if ($env !== null) {
+                    $_ENV[$name] = $env;
+                }
+            }
+        }
+    }
+
+    private function setEnvironmentValue(string $name, ?string $value): void
+    {
+        if ($value === null) {
+            putenv($name);
+            unset($_SERVER[$name], $_ENV[$name]);
+
+            return;
+        }
+
+        putenv("{$name}={$value}");
+        $_SERVER[$name] = $value;
+        $_ENV[$name] = $value;
+    }
+
     public function test_basic_mode_stores_uploaded_images_without_resizing(): void
     {
         config(['qdealme.image_processing' => 'basic']);
@@ -104,29 +150,25 @@ class ServerlessSupportTest extends TestCase
     {
         $config = fn () => require config_path('database.php');
 
-        putenv('POSTGRES_URL=postgresql://u:p@db.example.test:5432/app');
-        try {
-            $this->assertSame('postgresql://u:p@db.example.test:5432/app', $config()['connections']['pgsql']['url']);
-        } finally {
-            putenv('POSTGRES_URL');
-        }
+        $url = $this->withEnvironment(
+            ['DB_URL' => null, 'POSTGRES_URL' => 'postgresql://u:p@db.example.test:5432/app'],
+            fn () => $config()['connections']['pgsql']['url'],
+        );
+
+        $this->assertSame('postgresql://u:p@db.example.test:5432/app', $url);
     }
 
     public function test_cloud_media_storage_switches_both_disks_to_s3(): void
     {
         $config = fn () => require config_path('filesystems.php');
 
-        putenv('MEDIA_STORAGE=cloud');
-        try {
-            $disks = $config()['disks'];
-            $this->assertSame('s3', $disks['public']['driver']);
-            $this->assertSame('s3', $disks['local']['driver']);
-            $this->assertSame('private', $disks['local']['visibility']);
-        } finally {
-            putenv('MEDIA_STORAGE');
-        }
+        $disks = $this->withEnvironment(['MEDIA_STORAGE' => 'cloud'], fn () => $config()['disks']);
+        $this->assertSame('s3', $disks['public']['driver']);
+        $this->assertSame('s3', $disks['local']['driver']);
+        $this->assertSame('private', $disks['local']['visibility']);
 
-        $this->assertSame('local', $config()['disks']['public']['driver']);
+        $disks = $this->withEnvironment(['MEDIA_STORAGE' => 'disk'], fn () => $config()['disks']);
+        $this->assertSame('local', $disks['public']['driver']);
     }
 
     public function test_vercel_build_skips_cleanly_without_a_database_url(): void
