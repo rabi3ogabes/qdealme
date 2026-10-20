@@ -61,7 +61,7 @@ Seeding creates ten **fictional** demo stores with generated flyers, so you can 
 
 ## Running in production
 
-Use Supabase (or any managed PostgreSQL) as the database: see [docs/SUPABASE.md](docs/SUPABASE.md).
+Use Supabase (or any managed PostgreSQL) as the database: see [docs/SUPABASE.md](docs/SUPABASE.md). To host on Vercel instead of a PHP server, follow [docs/VERCEL.md](docs/VERCEL.md).
 
 1. Point your web server's document root at `public/` and run `php artisan storage:link`.
 2. Keep a queue worker running (for example with Supervisor): `php artisan queue:work --tries=2 --timeout=900`

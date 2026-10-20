@@ -4,19 +4,50 @@ namespace App\Services;
 
 use App\Models\Flyer;
 use App\Models\FlyerPage;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 use RuntimeException;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
+/**
+ * Turns an upload into flyer pages. Works with any storage disk (local or
+ * S3-compatible): sources are copied to a temporary folder first.
+ *
+ * Full mode (GD available): PDFs are rasterised with pdftoppm and every page
+ * gets WebP and JPEG copies at several widths.
+ * Basic mode (no GD, e.g. serverless hosts): uploaded images are kept as they
+ * are, with their dimensions read natively; PDFs are refused with a clear
+ * message because they cannot be rasterised there.
+ */
 class FlyerImageProcessor
 {
-    private ImageManager $images;
+    private const IMAGE_TYPES = [
+        IMAGETYPE_JPEG => ['jpg', 'image/jpeg'],
+        IMAGETYPE_PNG => ['png', 'image/png'],
+        IMAGETYPE_WEBP => ['webp', 'image/webp'],
+    ];
 
-    public function __construct()
+    private ?ImageManager $images = null;
+
+    public static function canResize(): bool
     {
-        $this->images = new ImageManager(new Driver);
+        return config('qdealme.image_processing') !== 'basic'
+            && extension_loaded('gd')
+            && function_exists('imagewebp');
+    }
+
+    public static function canRasterizePdf(): bool
+    {
+        if (config('qdealme.image_processing') === 'basic') {
+            return false;
+        }
+
+        $binary = (string) config('qdealme.pdftoppm_binary');
+
+        return is_file($binary) || (new ExecutableFinder)->find($binary) !== null;
     }
 
     /**
@@ -31,34 +62,38 @@ class FlyerImageProcessor
             throw new RuntimeException('No upload found for this flyer.');
         }
 
-        $disk = Storage::disk('public');
-        $directory = "flyers/{$flyer->id}/pages";
-        $disk->deleteDirectory($directory);
-        $disk->makeDirectory($directory);
+        $work = rtrim(sys_get_temp_dir(), '/')."/qdealme-flyer-{$flyer->id}-".bin2hex(random_bytes(4));
+        File::ensureDirectoryExists($work);
 
-        $flyer->pages()->delete();
-        $flyer->forceFill(['cover_page_id' => null])->save();
+        try {
+            $sources = [];
 
-        $pageNumber = 0;
+            foreach ($files as $i => $file) {
+                $local = $work.'/source-'.$i.'.'.strtolower(pathinfo($file, PATHINFO_EXTENSION) ?: 'bin');
+                $this->download($file, $local);
 
-        foreach ($files as $file) {
-            $absolute = Storage::disk('local')->path($file);
-
-            $sources = str_ends_with(strtolower($file), '.pdf')
-                ? $this->rasterizePdf($absolute, $flyer->id)
-                : [$absolute];
-
-            foreach ($sources as $source) {
-                $pageNumber++;
-                $this->storePage($flyer, $source, $pageNumber, $directory);
+                $sources = [...$sources, ...($this->isPdf($local) ? $this->rasterizePdf($local, $work, $i) : [$local])];
             }
-        }
 
-        $flyer->refresh();
-        $flyer->forceFill([
-            'page_count' => $pageNumber,
-            'cover_page_id' => $flyer->pages()->orderBy('number')->value('id'),
-        ])->save();
+            $disk = Storage::disk('public');
+            $directory = "flyers/{$flyer->id}/pages";
+            $disk->deleteDirectory($directory);
+
+            $flyer->pages()->delete();
+            $flyer->forceFill(['cover_page_id' => null])->save();
+
+            foreach ($sources as $index => $source) {
+                $this->storePage($flyer, $source, $index + 1, $directory);
+            }
+
+            $flyer->refresh();
+            $flyer->forceFill([
+                'page_count' => count($sources),
+                'cover_page_id' => $flyer->pages()->orderBy('number')->value('id'),
+            ])->save();
+        } finally {
+            File::deleteDirectory($work);
+        }
     }
 
     /**
@@ -75,23 +110,49 @@ class FlyerImageProcessor
         return array_values(array_filter($files, fn ($f) => Storage::disk('local')->exists($f)));
     }
 
+    private function download(string $file, string $target): void
+    {
+        $stream = Storage::disk('local')->readStream($file);
+
+        if ($stream === null) {
+            throw new RuntimeException("Could not read the uploaded file {$file}.");
+        }
+
+        $out = fopen($target, 'wb');
+        stream_copy_to_stream($stream, $out);
+        fclose($out);
+
+        if (is_resource($stream)) {
+            fclose($stream);
+        }
+    }
+
+    private function isPdf(string $path): bool
+    {
+        $handle = fopen($path, 'rb');
+        $magic = (string) fread($handle, 5);
+        fclose($handle);
+
+        return $magic === '%PDF-';
+    }
+
     /**
      * @return array<int, string>
      */
-    private function rasterizePdf(string $pdf, int $flyerId): array
+    private function rasterizePdf(string $pdf, string $work, int $index): array
     {
-        $out = storage_path("app/private/tmp/flyer-{$flyerId}");
-
-        if (! is_dir($out)) {
-            mkdir($out, 0775, true);
+        if (! self::canRasterizePdf()) {
+            throw new RuntimeException('PDF flyers cannot be processed on this server because pdftoppm (Poppler) is not installed. Upload the pages as JPG, PNG or WebP images instead.');
         }
+
+        $prefix = $work.'/pdf-'.$index;
 
         $process = new Process([
             config('qdealme.pdftoppm_binary'),
             '-r', (string) config('qdealme.rasterize_dpi'),
             '-jpeg', '-jpegopt', 'quality=90',
             $pdf,
-            $out.'/page',
+            $prefix,
         ]);
         $process->setTimeout(600);
         $process->run();
@@ -100,15 +161,28 @@ class FlyerImageProcessor
             throw new RuntimeException('PDF rasterisation failed: '.trim($process->getErrorOutput()));
         }
 
-        $pages = glob($out.'/page-*.jpg') ?: [];
+        $pages = glob($prefix.'-*.jpg') ?: [];
         natsort($pages);
+
+        if ($pages === []) {
+            throw new RuntimeException('The PDF did not contain any pages.');
+        }
 
         return array_values($pages);
     }
 
     private function storePage(Flyer $flyer, string $source, int $number, string $directory): void
     {
+        self::canResize()
+            ? $this->storeWithDerivatives($flyer, $source, $number, $directory)
+            : $this->storeOriginalOnly($flyer, $source, $number, $directory);
+    }
+
+    private function storeWithDerivatives(Flyer $flyer, string $source, int $number, string $directory): void
+    {
         $disk = Storage::disk('public');
+        $this->images ??= new ImageManager(new Driver);
+
         $image = $this->images->read($source);
         $width = $image->width();
         $height = $image->height();
@@ -136,10 +210,39 @@ class FlyerImageProcessor
         // The original always acts as the largest candidate.
         $derivatives['jpg'][$width] = $originalPath;
 
+        $this->createPage($flyer, $number, $originalPath, $width, $height, $derivatives);
+    }
+
+    private function storeOriginalOnly(Flyer $flyer, string $source, int $number, string $directory): void
+    {
+        $info = @getimagesize($source);
+
+        if ($info === false || ! isset(self::IMAGE_TYPES[$info[2]])) {
+            throw new RuntimeException('Unsupported flyer page. Upload JPG, PNG or WebP images.');
+        }
+
+        [$extension, $mime] = self::IMAGE_TYPES[$info[2]];
+        $path = "{$directory}/{$number}/original.{$extension}";
+
+        $stream = fopen($source, 'rb');
+        Storage::disk('public')->put($path, $stream, ['ContentType' => $mime, 'visibility' => 'public']);
+
+        if (is_resource($stream)) {
+            fclose($stream);
+        }
+
+        $this->createPage($flyer, $number, $path, (int) $info[0], (int) $info[1], []);
+    }
+
+    /**
+     * @param  array<string, array<int, string>>  $derivatives
+     */
+    private function createPage(Flyer $flyer, int $number, string $path, int $width, int $height, array $derivatives): void
+    {
         FlyerPage::query()->create([
             'flyer_id' => $flyer->id,
             'number' => $number,
-            'original_path' => $originalPath,
+            'original_path' => $path,
             'width' => $width,
             'height' => $height,
             'derivatives' => $derivatives,

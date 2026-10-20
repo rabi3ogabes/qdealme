@@ -1,0 +1,30 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "framework": null,
+    "installCommand": "npm ci",
+    "buildCommand": "npm run build",
+    "outputDirectory": "public",
+    "functions": {
+        "api/index.php": {
+            "runtime": "vercel-php@0.7.4",
+            "memory": 1024,
+            "maxDuration": 60,
+            "excludeFiles": "{node_modules/**,tests/**,.github/**,docs/**,resources/js/**,resources/css/**,resources/fonts/**,database/seeders/assets/**,storage/app/**,storage/logs/**,storage/framework/**,public/storage/**,vendor/**/tests/**,vendor/**/Tests/**,vendor/**/docs/**}"
+        }
+    },
+    "routes": [
+        {
+            "handle": "filesystem"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/api/index.php"
+        }
+    ],
+    "crons": [
+        {
+            "path": "/cron/flyers/roll",
+            "schedule": "5 21 * * *"
+        }
+    ]
+}

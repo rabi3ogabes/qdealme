@@ -129,7 +129,9 @@ return [
     */
 
     'temporary_file_upload' => [
-        'disk' => env('LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK'), // Example: 'local', 's3'             | Default: 'default'
+        // Private disk: temporary uploads must never be publicly reachable. In
+        // cloud mode this is the private bucket (browser uploads go straight to it).
+        'disk' => env('LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK', 'local'),
         // Flyer PDFs can be large; the limit is configured in config/qdealme.php.
         'rules' => ['required', 'file', 'max:'.((int) env('QDEALME_MAX_UPLOAD_MB', 80) * 1024)],                                      // Example: ['file', 'mimes:png,jpg'] | Default: ['required', 'file', 'max:12288'] (12MB)
         'directory' => null,                                  // Example: 'tmp'                     | Default: 'livewire-tmp'

@@ -86,7 +86,9 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => env('DB_URL'),
+            // Vercel's Postgres integrations (Neon, Supabase) provide POSTGRES_URL
+            // or DATABASE_URL; DB_URL wins when set.
+            'url' => env('DB_URL') ?: env('POSTGRES_URL') ?: env('DATABASE_URL') ?: null,
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'laravel'),

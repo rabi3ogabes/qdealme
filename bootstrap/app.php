@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind Vercel or an nginx proxy, trust the forwarded scheme and host
+        // so generated URLs use https. Set TRUSTED_PROXIES=* only behind a proxy.
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : explode(',', $proxies));
+        }
+
         $middleware->web(append: [
             SecurityHeaders::class,
         ]);

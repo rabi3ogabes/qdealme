@@ -27,6 +27,7 @@ return [
     'reprocess_notice' => 'The upload has been queued for processing.',
     'source_help' => 'Only sources with an approved licence can be selected. This is enforced in code.',
     'upload_help' => 'Upload one PDF or several page images (JPG, PNG, WebP). Pages are generated in the background.',
+    'upload_help_images_only' => 'Upload the flyer pages as JPG, PNG or WebP images, in order. PDF upload is not available on this server.',
     'models' => [
         'retailer' => ['one' => 'Store', 'many' => 'Stores'],
         'branch' => ['one' => 'Branch', 'many' => 'Branches'],

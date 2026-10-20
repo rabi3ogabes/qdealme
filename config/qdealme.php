@@ -71,6 +71,11 @@ return [
 
     'pdftoppm_binary' => env('QDEALME_PDFTOPPM', 'pdftoppm'),
 
+    // "auto" resizes pages and accepts PDFs when the server supports it.
+    // "basic" stores uploaded images as they are and refuses PDFs; use it on
+    // serverless hosts such as Vercel, which have no GD or Poppler.
+    'image_processing' => env('QDEALME_IMAGE_PROCESSING', 'auto'),
+
     'max_upload_mb' => (int) env('QDEALME_MAX_UPLOAD_MB', 80),
 
     /*
@@ -84,4 +89,16 @@ return [
     */
 
     'admin_require_mfa' => (bool) env('ADMIN_REQUIRE_MFA', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cron over HTTP
+    |--------------------------------------------------------------------------
+    |
+    | Secret for /cron/flyers/roll, used by Vercel Cron instead of
+    | `php artisan schedule:run`. Leave empty to disable the endpoint.
+    |
+    */
+
+    'cron_secret' => env('CRON_SECRET', ''),
 ];

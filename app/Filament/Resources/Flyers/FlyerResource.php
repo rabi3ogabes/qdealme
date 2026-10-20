@@ -13,6 +13,7 @@ use App\Filament\Resources\Flyers\RelationManagers\OffersRelationManager;
 use App\Jobs\ProcessFlyerUpload;
 use App\Models\Flyer;
 use App\Models\FlyerSource;
+use App\Services\FlyerImageProcessor;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -119,10 +120,12 @@ class FlyerResource extends Resource
             ]),
             Section::make(admin_field('files'))->schema([
                 FileUpload::make('upload_files')->label(admin_field('upload'))
-                    ->helperText(__('admin.upload_help'))
+                    ->helperText(FlyerImageProcessor::canRasterizePdf() ? __('admin.upload_help') : __('admin.upload_help_images_only'))
                     ->disk('local')->directory('uploads/flyers')->visibility('private')
                     ->multiple()->reorderable()->appendFiles()
-                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(FlyerImageProcessor::canRasterizePdf()
+                        ? ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+                        : ['image/jpeg', 'image/png', 'image/webp'])
                     ->maxSize(config('qdealme.max_upload_mb') * 1024)
                     ->required(fn (?Flyer $record) => $record === null),
                 Placeholder::make('processing_error')->label(admin_field('processing_error'))

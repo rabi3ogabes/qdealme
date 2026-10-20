@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CronController;
 use App\Http\Controllers\DealsController;
 use App\Http\Controllers\EngagementController;
 use App\Http\Controllers\FlyersController;
@@ -24,6 +25,10 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/{locale}', [HomeController::class, 'locale'])
     ->where('locale', 'ar|en')
     ->name('home.redirect');
+
+Route::get('/cron/flyers/roll', [CronController::class, 'rollFlyers'])
+    ->middleware('throttle:10,1')
+    ->name('cron.flyers.roll');
 
 Route::post('/preferences/digits', [PreferencesController::class, 'digits'])->name('preferences.digits');
 
