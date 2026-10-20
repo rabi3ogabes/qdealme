@@ -53,7 +53,10 @@ return [
         ] : [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => false,
+            // Served only through signed, expiring links (temporaryUrl), so the
+            // admin can preview uploads without making them public.
+            'serve' => true,
+            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/private-files',
             'throw' => false,
             'report' => false,
         ],

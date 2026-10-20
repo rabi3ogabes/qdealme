@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\FlyerSources;
 
+use App\Actions\Flyers\PullAllFeeds;
 use App\Actions\Flyers\PullLatestFlyer;
 use App\Actions\Flyers\RevokeFlyerSource;
 use App\Enums\LicenseStatus;
@@ -14,6 +15,8 @@ use App\Filament\Resources\FlyerSources\Pages\ManageFlyerSources;
 use App\Models\FlyerSource;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -27,6 +30,8 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Collection;
+use Illuminate\Support\HtmlString;
 use Livewire\Component;
 
 /**
@@ -46,6 +51,18 @@ class FlyerSourceResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShieldCheck;
 
     protected static ?int $navigationSort = 2;
+
+    public static function getNavigationBadge(): ?string
+    {
+        $count = FlyerSource::query()->where('license_status', LicenseStatus::Pending->value)->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'primary';
+    }
 
     public static function canManageLicences(): bool
     {
@@ -118,7 +135,52 @@ class FlyerSourceResource extends Resource
                     ->requiresConfirmation()->modalDescription(__('admin.pull_confirm'))
                     ->action(fn (FlyerSource $record, Component $livewire) => static::pull($record, $livewire)),
                 EditAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    BulkAction::make('pullSelected')
+                        ->label(__('admin.pull_selected'))
+                        ->icon(Heroicon::OutlinedArrowDownTray)
+                        ->visible(fn () => static::canManageLicences())
+                        ->requiresConfirmation()->modalDescription(__('admin.pull_bulk_confirm'))
+                        ->deselectRecordsAfterCompletion()
+                        ->action(fn (Collection $records) => static::pullMany($records)),
+                ]),
             ]);
+    }
+
+    /**
+     * Pull several feeds (or all, when $sources is null) and report the outcome.
+     *
+     * @param  Collection<int, FlyerSource>|null  $sources
+     */
+    public static function pullMany(?Collection $sources = null): void
+    {
+        $summary = app(PullAllFeeds::class)->handle($sources);
+        $total = $summary['created'] + $summary['unchanged'] + count($summary['failed']);
+
+        if ($total === 0) {
+            Notification::make()->warning()->title(__('admin.pull_none'))->body(__('admin.pull_none_hint'))->persistent()->send();
+
+            return;
+        }
+
+        $lines = [__('admin.pull_summary', [
+            'created' => $summary['created'],
+            'unchanged' => $summary['unchanged'],
+            'failed' => count($summary['failed']),
+        ])];
+
+        foreach ($summary['failed'] as $store => $reason) {
+            $lines[] = "• {$store}: {$reason}";
+        }
+
+        Notification::make()
+            ->title(__('admin.pull_done'))
+            ->body(new HtmlString(implode('<br>', array_map('e', $lines))))
+            ->status($summary['failed'] === [] ? 'success' : ($summary['created'] > 0 ? 'warning' : 'danger'))
+            ->persistent($summary['failed'] !== [])
+            ->send();
     }
 
     public static function isFeedType(mixed $type): bool

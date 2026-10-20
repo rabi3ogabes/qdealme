@@ -149,8 +149,9 @@ class FlyerResource extends Resource
                 TextColumn::make('retailer.name_en')->label(admin_field('retailer'))->searchable()->sortable(),
                 TextColumn::make('title_en')->label(admin_field('title_en'))->searchable()->description(fn (Flyer $f) => $f->title_ar)->limit(40),
                 TextColumn::make('status')->label(admin_field('status'))->badge()->sortable(),
-                TextColumn::make('valid_from')->label(admin_field('validity'))->date('j M')
-                    ->description(fn (Flyer $f) => '→ '.$f->valid_until->format('j M Y'))->sortable(),
+                TextColumn::make('valid_from')->label(admin_field('validity'))
+                    ->formatStateUsing(fn (Flyer $record) => $record->valid_from->translatedFormat('j M').' – '.$record->valid_until->translatedFormat('j M Y'))
+                    ->sortable(),
                 TextColumn::make('page_count')->label(admin_field('pages'))->numeric()->sortable(),
                 TextColumn::make('view_count')->label(admin_field('views'))->numeric()->sortable()->toggleable(),
                 IconColumn::make('is_sponsored')->label(admin_field('sponsored'))->boolean()

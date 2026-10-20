@@ -14,6 +14,8 @@ use App\Models\FlyerSource;
 use App\Models\Retailer;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
@@ -35,6 +37,7 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -114,6 +117,19 @@ class RetailerResource extends Resource
                     ->requiresConfirmation()->modalDescription(__('admin.pull_confirm'))
                     ->action(fn (Retailer $record, Component $livewire) => FlyerSourceResource::pull(static::feedSource($record), $livewire)),
                 EditAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    BulkAction::make('pullSelected')
+                        ->label(__('admin.pull_selected'))
+                        ->icon(Heroicon::OutlinedArrowDownTray)
+                        ->visible(fn () => FlyerSourceResource::canManageLicences())
+                        ->requiresConfirmation()->modalDescription(__('admin.pull_bulk_confirm'))
+                        ->deselectRecordsAfterCompletion()
+                        ->action(fn (Collection $records) => FlyerSourceResource::pullMany(
+                            $records->map(fn (Retailer $retailer) => static::feedSource($retailer))->filter()->values()
+                        )),
+                ]),
             ]);
     }
 
