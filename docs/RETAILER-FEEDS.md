@@ -23,6 +23,14 @@ Click **Pull latest flyer** on the store's row in **Stores**, or on the source's
 - If the store hasn't changed its flyer since the last pull, nothing is created.
 - If something is wrong (the link moved, or the file is too big), the reason is shown and saved under **Last pulled** on the source.
 
+### Many stores at once
+
+- **Dashboard → Pull all store feeds** pulls every approved feed and shows a summary: new drafts, unchanged, and failed with the reason for each store.
+- **Stores** or **Flyer sources**: tick several rows, then **Bulk actions → Pull latest flyers**.
+- **Automatically, every day:** the scheduler runs `php artisan flyers:pull-feeds` at 06:00 Qatar time. On Vercel, the cron job calls `/cron/feeds/pull` at 06:00 Qatar time, protected by `CRON_SECRET`. New flyers wait in the dashboard's **Review queue** for approval.
+
+One store failing never stops the others.
+
 ## What the link may return
 
 The link must use `https://` and be on the store's website domain, or a subdomain of it such as `cdn.carrefourqatar.com`. Redirects are not followed, and links to private network addresses are refused.

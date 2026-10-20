@@ -12,6 +12,7 @@ A regular PHP server (see the README's production section) has fewer limits. Cho
 | Flyer uploads as JPG, PNG or WebP | Yes, with resized copies | Yes, stored as uploaded |
 | Flyer uploads as PDF | Yes | No: Vercel has no PDF tool, so the admin only offers images |
 | Automatic publish and expiry | Every 15 minutes | Once a day at 00:05 Qatar time (Vercel Cron) |
+| Pulling approved store feeds | Daily at 06:00 Qatar time | Daily at 06:00 Qatar time (Vercel Cron) |
 | Fictional demo stores (`DemoContentSeeder`) | Yes | Seed them from your computer (step 5) |
 
 ## 1. A database

@@ -15,6 +15,7 @@ return [
         'unrecognised' => 'The link did not return a flyer image, a PDF or a flyer manifest.',
         'too_many_pages' => 'The flyer manifest lists more than :max pages.',
         'page_not_image' => 'A page in the manifest is not a JPG, PNG or WebP image (:url).',
+        'unexpected' => 'Something went wrong while pulling this feed. The error has been logged.',
         'pdf_unsupported' => 'The store publishes a PDF, but this server cannot convert PDFs. Ask the store for page images or a flyer manifest.',
     ],
 ];

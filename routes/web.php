@@ -30,6 +30,10 @@ Route::get('/cron/flyers/roll', [CronController::class, 'rollFlyers'])
     ->middleware('throttle:10,1')
     ->name('cron.flyers.roll');
 
+Route::get('/cron/feeds/pull', [CronController::class, 'pullFeeds'])
+    ->middleware('throttle:10,1')
+    ->name('cron.feeds.pull');
+
 Route::post('/preferences/digits', [PreferencesController::class, 'digits'])->name('preferences.digits');
 
 /*

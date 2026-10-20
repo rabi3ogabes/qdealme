@@ -2,13 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Actions\Flyers\PullAllFeeds;
 use App\Actions\Flyers\PullLatestFlyer;
 use App\Enums\FlyerStatus;
 use App\Enums\LicenseStatus;
 use App\Enums\SourceType;
 use App\Enums\UserRole;
 use App\Exceptions\FeedPullException;
+use App\Filament\Pages\Dashboard;
 use App\Filament\Resources\FlyerSources\Pages\ManageFlyerSources;
+use App\Filament\Resources\Retailers\Pages\ListRetailers;
 use App\Jobs\ProcessFlyerUpload;
 use App\Models\City;
 use App\Models\Flyer;
@@ -212,6 +215,81 @@ class RetailerFeedTest extends TestCase
         $source = FlyerSource::query()->where('retailer_id', $retailer->id)->firstOrFail();
         $this->assertSame('https://www.monoprix.qa/flyer/current.json', $source->feed_url);
         $this->assertSame(LicenseStatus::Pending, $source->license_status);
+    }
+
+    public function test_pulling_many_feeds_reports_each_outcome_and_keeps_going(): void
+    {
+        Http::fake([
+            'https://www.carrefourqatar.com/*' => Http::response($this->png(), 200),
+            'https://www.monoprix.qa/*' => Http::response('Not here', 404),
+        ]);
+        $ok = $this->feedSource('https://www.carrefourqatar.com/latest.png');
+        $broken = FlyerSource::query()->create([
+            'retailer_id' => $this->makeRetailer(['name_en' => 'Monoprix', 'website_url' => 'https://www.monoprix.qa'])->id,
+            'type' => SourceType::RetailerFeed,
+            'license_status' => LicenseStatus::Approved,
+            'feed_url' => 'https://www.monoprix.qa/flyer.png',
+        ]);
+        $this->feedSource('https://www.carrefourqatar.com/other.png', status: LicenseStatus::Pending);
+
+        $summary = app(PullAllFeeds::class)->handle();
+
+        $this->assertSame(1, $summary['created']);
+        $this->assertSame(0, $summary['unchanged']);
+        $this->assertArrayHasKey('Monoprix', $summary['failed']);
+        $this->assertSame(1, Flyer::query()->where('flyer_source_id', $ok->id)->count());
+        $this->assertNotNull($broken->refresh()->last_pull_error);
+
+        $again = app(PullAllFeeds::class)->handle();
+        $this->assertSame(0, $again['created']);
+        $this->assertSame(1, $again['unchanged']);
+    }
+
+    public function test_admins_pull_selected_stores_in_bulk(): void
+    {
+        Http::fake(['https://www.carrefourqatar.com/*' => Http::response($this->png(), 200)]);
+        $source = $this->feedSource('https://www.carrefourqatar.com/latest.png');
+        $withoutFeed = $this->makeRetailer();
+
+        $this->actingAs($this->makeUser(UserRole::ContentAdmin));
+        Livewire::test(ListRetailers::class)
+            ->callTableBulkAction('pullSelected', [$source->retailer, $withoutFeed])
+            ->assertNotified();
+
+        $this->assertSame(1, Flyer::query()->where('flyer_source_id', $source->id)->count());
+
+        Livewire::test(ManageFlyerSources::class)
+            ->callTableBulkAction('pullSelected', [$source])
+            ->assertNotified();
+        $this->assertSame(1, Flyer::query()->count());
+    }
+
+    public function test_the_dashboard_pulls_every_approved_feed(): void
+    {
+        Http::fake(['https://www.carrefourqatar.com/*' => Http::response($this->png(), 200)]);
+        $this->feedSource('https://www.carrefourqatar.com/latest.png');
+
+        $this->actingAs($this->makeUser(UserRole::Reviewer));
+        Livewire::test(Dashboard::class)->assertActionHidden('pullFeeds');
+
+        $this->actingAs($this->makeUser(UserRole::SuperAdmin));
+        Livewire::test(Dashboard::class)->callAction('pullFeeds')->assertNotified();
+
+        $this->assertSame(1, Flyer::query()->count());
+    }
+
+    public function test_feeds_are_pulled_daily_by_command_and_cron(): void
+    {
+        Http::fake(['https://www.carrefourqatar.com/*' => Http::response($this->png(), 200)]);
+        $this->feedSource('https://www.carrefourqatar.com/latest.png');
+
+        $this->artisan('flyers:pull-feeds')->expectsOutputToContain('New drafts: 1')->assertSuccessful();
+
+        config(['qdealme.cron_secret' => 'top-secret']);
+        $this->get('/cron/feeds/pull')->assertUnauthorized();
+        $this->withHeader('Authorization', 'Bearer top-secret')->get('/cron/feeds/pull')
+            ->assertOk()
+            ->assertJson(['created' => 0, 'unchanged' => 1, 'failed' => 0]);
     }
 
     public function test_store_directory_adds_hidden_stores_and_keeps_admin_edits(): void

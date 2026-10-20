@@ -26,6 +26,10 @@
         {
             "path": "/cron/flyers/roll",
             "schedule": "5 21 * * *"
+        },
+        {
+            "path": "/cron/feeds/pull",
+            "schedule": "0 3 * * *"
         }
     ]
 }
