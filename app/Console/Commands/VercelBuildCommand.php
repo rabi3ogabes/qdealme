@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Database\Seeders\CategorySeeder;
 use Database\Seeders\LocationSeeder;
+use Database\Seeders\RetailerDirectorySeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
@@ -47,6 +48,7 @@ class VercelBuildCommand extends Command
             $this->call('migrate', ['--force' => true]);
             $this->call('db:seed', ['--class' => LocationSeeder::class, '--force' => true]);
             $this->call('db:seed', ['--class' => CategorySeeder::class, '--force' => true]);
+            $this->call('db:seed', ['--class' => RetailerDirectorySeeder::class, '--force' => true]);
 
             if (filled(env('ADMIN_PASSWORD'))) {
                 $this->call('db:seed', ['--class' => UserSeeder::class, '--force' => true]);

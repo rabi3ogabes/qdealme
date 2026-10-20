@@ -28,6 +28,7 @@ See [docs/BRAND.md](docs/BRAND.md) for the slogan shortlist and visual identity.
 
 **Trust and safety**
 - Flyers can only come from approved sources, enforced in the form, the model, the publish action and a PostgreSQL trigger ([ADR 002](docs/decisions/002-lawful-sourcing.md))
+- Staff can pull a store's current flyer from the official link on its own website into a draft for review ([docs/RETAILER-FEEDS.md](docs/RETAILER-FEEDS.md))
 - Only verified prices appear in deals, search and product pages
 - Rate-limited forms with a honeypot, security headers, no third-party trackers, staff avatars rendered locally
 

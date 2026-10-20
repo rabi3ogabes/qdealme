@@ -3,11 +3,14 @@
 namespace App\Filament\Resources\Retailers;
 
 use App\Enums\RetailerType;
+use App\Enums\SourceType;
 use App\Filament\Concerns\AdminNavigation;
+use App\Filament\Resources\FlyerSources\FlyerSourceResource;
 use App\Filament\Resources\Retailers\Pages\CreateRetailer;
 use App\Filament\Resources\Retailers\Pages\EditRetailer;
 use App\Filament\Resources\Retailers\Pages\ListRetailers;
 use App\Filament\Resources\Retailers\RelationManagers\BranchesRelationManager;
+use App\Models\FlyerSource;
 use App\Models\Retailer;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -33,6 +36,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
+use Livewire\Component;
 
 class RetailerResource extends Resource
 {
@@ -103,8 +107,26 @@ class RetailerResource extends Resource
                 Action::make('view')->label(admin_field('view_on_site'))->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->url(fn (Retailer $r) => route('stores.show', ['locale' => 'ar', 'country' => config('qdealme.default_country'), 'city' => config('qdealme.default_city'), 'retailer' => $r]))
                     ->openUrlInNewTab(),
+                Action::make('pull')
+                    ->label(__('admin.pull_latest'))
+                    ->icon(Heroicon::OutlinedArrowDownTray)
+                    ->visible(fn (Retailer $record) => FlyerSourceResource::canManageLicences() && static::feedSource($record) !== null)
+                    ->requiresConfirmation()->modalDescription(__('admin.pull_confirm'))
+                    ->action(fn (Retailer $record, Component $livewire) => FlyerSourceResource::pull(static::feedSource($record), $livewire)),
                 EditAction::make(),
             ]);
+    }
+
+    /**
+     * The store's approved feed with an official flyer link, if it has one.
+     */
+    public static function feedSource(Retailer $retailer): ?FlyerSource
+    {
+        return $retailer->sources()->approved()
+            ->where('type', SourceType::RetailerFeed->value)
+            ->whereNotNull('feed_url')
+            ->latest('approved_at')
+            ->first();
     }
 
     public static function getRelations(): array
