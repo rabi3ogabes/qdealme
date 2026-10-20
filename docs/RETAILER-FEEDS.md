@@ -75,4 +75,4 @@ Only `pages` is required. Page images may be on any public `https://` host the s
 
 ## Store list
 
-`RetailerDirectorySeeder` adds the main Qatar chains (Carrefour, LuLu, Monoprix, Al Meera, Safari, Ansar Gallery, Jarir and others) with Arabic and English names. They start **hidden**. Add the logo the store gives you and switch the store on once its first flyer is approved. The seeder runs on every Vercel build and in `composer setup`, but it never changes a store that already exists.
+`RetailerDirectorySeeder` adds the main Qatar chains (Carrefour, LuLu, Monoprix, Al Meera, Safari, Ansar Gallery, Paris Hypermarket, Jarir and others) with Arabic and English names. They start **hidden**. Add the logo the store gives you and switch the store on once its first flyer is approved. The seeder runs on every Vercel build and in `composer setup`, but it never changes a store that already exists.

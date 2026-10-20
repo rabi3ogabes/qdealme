@@ -35,6 +35,8 @@ class RetailerDirectorySeeder extends Seeder
         ['jarir-bookstore', 'مكتبة جرير', 'Jarir Bookstore', RetailerType::Electronics, 'https://www.jarir.com'],
         ['virgin-megastore', 'فيرجن ميغاستور', 'Virgin Megastore', RetailerType::Electronics, 'https://www.virginmegastore.qa'],
         ['emax', 'إيماكس', 'Emax', RetailerType::Electronics, null],
+        // Added later: new stores go at the end so existing sort positions never collide.
+        ['paris-hypermarket', 'باريس هايبرماركت', 'Paris Hypermarket', RetailerType::Hypermarket, null],
     ];
 
     public function run(): void
