@@ -21,6 +21,10 @@ The app needs PostgreSQL that Vercel can reach. Either works:
 - **Neon (easiest):** in your Vercel project, open **Storage → Create Database → Neon**. Vercel adds `POSTGRES_URL` automatically.
 - **Supabase:** follow [docs/SUPABASE.md](SUPABASE.md), then add `DB_URL` (session pooler URI) in Vercel.
 
+`vercel.json` runs the app in Mumbai (`"regions": ["bom1"]`), next to a Supabase project in South Asia (Mumbai). If your database is in another region, change `regions` to the Vercel region closest to it. Every page makes several database queries, so a far-away database makes the site slow.
+
+Add every variable below for both **Production** and **Preview**. Pull request builds are Preview builds and cannot see Production-only variables.
+
 ## 2. Cloud file storage
 
 Vercel forgets files between requests, so flyer images and logos must live in S3-compatible storage. **Cloudflare R2** is a good fit (free tier, no download fees):
