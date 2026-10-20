@@ -2,6 +2,16 @@
 
 QDealMe uses PostgreSQL, so Supabase works as the production database without code changes. Laravel connects directly to the Supabase Postgres database. The Supabase client libraries and API keys are not used.
 
+## Which Supabase values QDealMe needs
+
+| Supabase value | Used by QDealMe? |
+|---|---|
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_JWKS_URL` | **No.** These are for Supabase's JavaScript clients and Supabase Auth. Don't add them. |
+| Database connection string (**Connect → Session pooler**) | **Yes**, as `DB_URL` (step 2) |
+| Storage S3 access keys (**Storage → S3**) | Only if Supabase Storage holds the flyer images (see Files) |
+
+Give QDealMe **its own Supabase project**. Never point it at a database another app uses. The migrations create common tables such as `users`, `sessions` and `cache`, which clash with other apps. They also turn on row-level security for every table in the `public` schema, which would block the other app's Supabase API access.
+
 ## 1. Create the project
 
 1. In the Supabase dashboard, create a project named `qdealme`.
@@ -43,7 +53,25 @@ Never put the `service_role` key or the database password in front-end code. QDe
 
 ## Files
 
-Flyer images are stored on the server's `public` disk (`storage/app/public`). For multiple servers or serverless hosting, switch the `public` disk to Supabase Storage via its S3-compatible endpoint, which requires the `league/flysystem-aws-s3-v3` package.
+Flyer images are stored on the server's `public` disk (`storage/app/public`) by default. For several servers or for Vercel, set `MEDIA_STORAGE=cloud` and use any S3-compatible storage. Supabase Storage works:
+
+1. In **Storage**, create a **public** bucket `qdealme-media` and a **private** bucket `qdealme-private`.
+2. In **Storage → S3**, enable the S3 protocol and create an access key. The secret is shown only once.
+3. Set these values. `<ref>` is your project ref, and the region is the project's region (for example `ap-south-1`).
+
+```dotenv
+MEDIA_STORAGE=cloud
+MEDIA_ENDPOINT=https://<ref>.storage.supabase.co/storage/v1/s3
+MEDIA_REGION=ap-south-1
+MEDIA_PATH_STYLE=true
+MEDIA_ACCESS_KEY_ID=<access key id>
+MEDIA_SECRET_ACCESS_KEY=<secret access key>
+MEDIA_PUBLIC_BUCKET=qdealme-media
+MEDIA_PRIVATE_BUCKET=qdealme-private
+MEDIA_PUBLIC_URL=https://<ref>.supabase.co/storage/v1/object/public/qdealme-media
+```
+
+Supabase Storage ignores S3 object ACLs. Whether a file is public depends on its bucket, so keep `qdealme-private` private. The S3 keys bypass all Storage policies, so keep them on the server only.
 
 ## Tests
 

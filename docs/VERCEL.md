@@ -34,6 +34,8 @@ Vercel forgets files between requests, so flyer images and logos must live in S3
 [{ "AllowedOrigins": ["https://qdealme.com"], "AllowedMethods": ["PUT", "GET"], "AllowedHeaders": ["*"], "MaxAgeSeconds": 3000 }]
 ```
 
+If your database is on Supabase, you can use **Supabase Storage** instead of R2. The values are listed in [docs/SUPABASE.md](SUPABASE.md#files). Use them in place of the R2 values below.
+
 ## 3. Environment variables in Vercel
 
 In **Project → Settings → Environment Variables**, add:
