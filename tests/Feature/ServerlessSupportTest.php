@@ -171,6 +171,27 @@ class ServerlessSupportTest extends TestCase
         $this->assertSame('local', $disks['public']['driver']);
     }
 
+    public function test_vercel_never_serves_php_or_dotfiles_as_static_downloads(): void
+    {
+        $routes = json_decode((string) file_get_contents(base_path('vercel.json')), true)['routes'];
+        $filesystem = array_search(['handle' => 'filesystem'], $routes, true);
+        $this->assertIsInt($filesystem);
+
+        $beforeFilesystem = array_slice($routes, 0, $filesystem);
+        $routedToApp = fn (string $path) => collect($beforeFilesystem)->contains(
+            fn (array $route) => preg_match('#^'.$route['src'].'$#', $path) === 1 && $route['dest'] === '/api/index.php'
+        );
+
+        // public/index.php would otherwise be sent to the browser as a raw file.
+        foreach (['/', '/index.php', '/index.php/anything', '/.htaccess', '/.env'] as $path) {
+            $this->assertTrue($routedToApp($path), "{$path} must be handled by the app, not served as a file");
+        }
+
+        foreach (['/robots.txt', '/build/manifest.json', '/css/qdealme-admin.css'] as $path) {
+            $this->assertFalse($routedToApp($path), "{$path} should still be served as a static file");
+        }
+    }
+
     public function test_vercel_build_skips_cleanly_without_a_database_url(): void
     {
         config(['database.connections.pgsql.url' => null, 'database.connections.pgsql.host' => '127.0.0.1']);
