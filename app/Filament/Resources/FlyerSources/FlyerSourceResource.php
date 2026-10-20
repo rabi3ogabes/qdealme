@@ -82,6 +82,10 @@ class FlyerSourceResource extends Resource
             TextInput::make('feed_url')->label(admin_field('feed_url'))->url()->maxLength(2048)->columnSpanFull()
                 ->helperText(__('admin.feed_help'))
                 ->visible(fn (Get $get) => static::isFeedType($get('type'))),
+            TextInput::make('page_url')->label(admin_field('page_url'))->url()->maxLength(2048)->columnSpanFull()
+                ->placeholder('https://www.facebook.com/…')
+                ->helperText(__('admin.import.page_help'))
+                ->visible(fn (Get $get) => in_array($get('type'), [SourceType::SocialMedia, SourceType::SocialMedia->value], true)),
             Textarea::make('notes')->label(admin_field('notes'))->rows(3)->columnSpanFull(),
         ]);
     }

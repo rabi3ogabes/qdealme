@@ -31,6 +31,25 @@ Click **Pull latest flyer** on the store's row in **Stores**, or on the source's
 
 One store failing never stops the others.
 
+## Importing from a store's Facebook or Instagram post
+
+Many stores, such as Paris Hypermarket, post their flyer on their own Facebook or Instagram page instead of their website. QDealMe does not download from social networks (their terms forbid it, and they block it), so staff add the images and QDealMe does the rest.
+
+**Set up once per store:**
+
+1. Get the store's written permission to show the flyers it posts.
+2. **Flyer sources → New:** Store; **Type:** Store's social media posts; **Official page link:** the store's page, for example `https://www.facebook.com/ParisHypermarketQatar`; the permission as the licence document.
+3. A super admin or content admin approves the licence.
+
+**Import a post:** **Dashboard** (or **Flyers**) **→ Import from a store post**.
+
+1. Paste the post link. A link that names the page (`facebook.com/ParisHypermarketQatar/posts/…`) selects the store and its source automatically. A share link (`facebook.com/share/p/…`) does not name the page, so pick the store yourself. The ↗ button opens the post in a new tab.
+2. Save each flyer image from the post (or copy it), then drop or paste them into **Flyer images from the post**. Drag them into page order.
+3. Optional: paste the post text. The offer dates are read from it in Arabic or English, for example `20 - 26 October`, `من ٢٠ إلى ٢٦ أكتوبر`, `22/10 - 28/10` or `valid until 30 Oct`. Otherwise the flyer runs for 7 days from today.
+4. **Create draft.** The draft opens, keeps the post link under **Links**, and waits for review like any other flyer.
+
+The same post link (tracking parameters such as `fbclid` are ignored) or the same set of images cannot be imported twice. QDealMe shows the existing flyer instead.
+
 ## What the link may return
 
 The link must use `https://` and be on the store's website domain, or a subdomain of it such as `cdn.carrefourqatar.com`. Redirects are not followed, and links to private network addresses are refused.

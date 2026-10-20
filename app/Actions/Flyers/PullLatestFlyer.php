@@ -2,20 +2,15 @@
 
 namespace App\Actions\Flyers;
 
-use App\Enums\FlyerStatus;
 use App\Enums\SourceType;
 use App\Exceptions\FeedPullException;
-use App\Jobs\ProcessFlyerUpload;
-use App\Models\City;
 use App\Models\Flyer;
 use App\Models\FlyerSource;
 use App\Services\FlyerImageProcessor;
 use App\Services\RetailerFeedClient;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Throwable;
 
 /**
  * Pulls the current flyer from a store's approved feed and turns it into a
@@ -25,7 +20,10 @@ use Throwable;
  */
 class PullLatestFlyer
 {
-    public function __construct(private readonly RetailerFeedClient $client) {}
+    public function __construct(
+        private readonly RetailerFeedClient $client,
+        private readonly CreateDraftFlyer $drafts,
+    ) {}
 
     public function handle(FlyerSource $source): ?Flyer
     {
@@ -54,7 +52,7 @@ class PullLatestFlyer
                 return null;
             }
 
-            $flyer = $this->createDraft($source, $feed);
+            $paths = $this->storeFiles($source, $feed);
         } catch (FeedPullException $e) {
             $source->forceFill(['last_pull_error' => $e->getMessage()])->save();
 
@@ -63,24 +61,19 @@ class PullLatestFlyer
 
         $source->forceFill(['last_pulled_at' => now(), 'last_pulled_hash' => $hash, 'last_pull_error' => null])->save();
 
-        try {
-            ProcessFlyerUpload::dispatch($flyer->id);
-        } catch (Throwable $e) {
-            // With the sync queue (Vercel) a processing failure surfaces here.
-            // The job has already marked the flyer as failed with the reason,
-            // so staff see it on the draft; keep the draft and log the error.
-            report($e);
-        }
-
-        return $flyer->refresh();
+        return $this->drafts->handle($source, $paths, [
+            'title_en' => $feed['title_en'] ?? null,
+            'title_ar' => $feed['title_ar'] ?? null,
+            'valid_from' => $feed['valid_from'] ?? null,
+            'valid_until' => $feed['valid_until'] ?? null,
+        ]);
     }
 
     /**
      * @param  array{files: array<int, array{bytes: string, ext: string}>, title_en: ?string, title_ar: ?string, valid_from: ?Carbon, valid_until: ?Carbon}  $feed
      */
-    private function createDraft(FlyerSource $source, array $feed): Flyer
+    private function storeFiles(FlyerSource $source, array $feed): array
     {
-        $retailer = $source->retailer;
         $directory = 'uploads/flyers/feed-'.$source->id.'-'.Str::lower(Str::random(10));
         $paths = [];
 
@@ -90,29 +83,6 @@ class PullLatestFlyer
             $paths[] = $path;
         }
 
-        $from = $feed['valid_from'] ?? today(config('qdealme.timezone'));
-        $until = $feed['valid_until'] ?? $from->copy()->addDays(6);
-
-        if ($until->lt($from)) {
-            $until = $from->copy()->addDays(6);
-        }
-
-        return DB::transaction(function () use ($source, $retailer, $feed, $paths, $from, $until) {
-            $flyer = Flyer::query()->create([
-                'retailer_id' => $retailer->id,
-                'flyer_source_id' => $source->id,
-                'title_en' => $feed['title_en'] ?? __('feed.default_title', ['store' => $retailer->name_en], 'en'),
-                'title_ar' => $feed['title_ar'] ?? __('feed.default_title', ['store' => $retailer->name_ar], 'ar'),
-                'valid_from' => $from->toDateString(),
-                'valid_until' => $until->toDateString(),
-                'status' => FlyerStatus::Draft,
-                'upload_files' => $paths,
-            ]);
-
-            $cities = $retailer->branches()->pluck('city_id')->unique()->values();
-            $flyer->cities()->sync($cities->isNotEmpty() ? $cities : City::query()->active()->pluck('id'));
-
-            return $flyer;
-        });
+        return $paths;
     }
 }

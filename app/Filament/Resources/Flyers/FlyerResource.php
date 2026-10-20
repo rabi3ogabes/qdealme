@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\Flyers;
 
+use App\Actions\Flyers\ImportFlyerFromPost;
 use App\Actions\Flyers\PublishFlyer;
 use App\Enums\FlyerStatus;
 use App\Enums\LicenseStatus;
+use App\Exceptions\PostImportException;
 use App\Filament\Concerns\AdminNavigation;
 use App\Filament\Resources\Flyers\Pages\CreateFlyer;
 use App\Filament\Resources\Flyers\Pages\EditFlyer;
@@ -13,8 +15,11 @@ use App\Filament\Resources\Flyers\RelationManagers\OffersRelationManager;
 use App\Jobs\ProcessFlyerUpload;
 use App\Models\Flyer;
 use App\Models\FlyerSource;
+use App\Models\Retailer;
 use App\Services\FlyerImageProcessor;
+use App\Support\PostDates;
 use BackedEnum;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
@@ -22,6 +27,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
@@ -30,6 +36,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
@@ -39,9 +46,12 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
+use Livewire\Component;
 
 class FlyerResource extends Resource
 {
@@ -81,14 +91,8 @@ class FlyerResource extends Resource
                     ->afterStateUpdated(fn (Set $set) => $set('flyer_source_id', null)),
                 Select::make('flyer_source_id')->label(admin_field('source'))
                     ->helperText(__('admin.source_help'))
-                    ->options(fn (Get $get) => FlyerSource::query()
-                        ->approved()
-                        ->where('retailer_id', $get('retailer_id'))
-                        ->get()
-                        ->mapWithKeys(fn (FlyerSource $s) => [$s->id => $s->type->label().' · #'.$s->id.($s->permission_contact ? ' · '.$s->permission_contact : '')]))
-                    ->rule(fn (Get $get) => Rule::exists('flyer_sources', 'id')
-                        ->where('license_status', LicenseStatus::Approved->value)
-                        ->where('retailer_id', $get('retailer_id')))
+                    ->options(fn (Get $get) => static::approvedSourceOptions($get('retailer_id')))
+                    ->rule(fn (Get $get) => static::approvedSourceRule($get('retailer_id')))
                     ->required()->native(false),
                 TextInput::make('title_ar')->label(admin_field('title_ar'))->required()->maxLength(160)->extraInputAttributes(['dir' => 'rtl']),
                 TextInput::make('title_en')->label(admin_field('title_en'))->required()->maxLength(160)
@@ -117,6 +121,9 @@ class FlyerResource extends Resource
             Section::make(admin_field('links'))->columns(2)->schema([
                 TextInput::make('shop_online_url')->label(admin_field('shop_online_url'))->url()->maxLength(255),
                 TextInput::make('whatsapp_order_url')->label(admin_field('whatsapp_order_url'))->url()->maxLength(255),
+                TextInput::make('source_post_url')->label(admin_field('source_post_url'))->url()->maxLength(2048)->columnSpanFull()
+                    ->visible(fn (?Flyer $record) => filled($record?->source_post_url))
+                    ->suffixAction(static::openLinkAction()),
             ]),
             Section::make(admin_field('files'))->schema([
                 FileUpload::make('upload_files')->label(admin_field('upload'))
@@ -180,6 +187,164 @@ class FlyerResource extends Resource
                 ]),
                 EditAction::make(),
             ]);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function approvedSourceOptions(mixed $retailerId): array
+    {
+        return FlyerSource::query()
+            ->approved()
+            ->where('retailer_id', $retailerId)
+            ->get()
+            ->mapWithKeys(fn (FlyerSource $s) => [$s->id => $s->type->label().' · #'.$s->id.($s->permission_contact ? ' · '.$s->permission_contact : '')])
+            ->all();
+    }
+
+    public static function approvedSourceRule(mixed $retailerId): Exists
+    {
+        return Rule::exists('flyer_sources', 'id')
+            ->where('license_status', LicenseStatus::Approved->value)
+            ->where('retailer_id', $retailerId);
+    }
+
+    /**
+     * Import a flyer that a store posted on its own social media page or
+     * website: staff paste the post link and drop in the post's images. The
+     * store, the source and the offer dates are filled in automatically.
+     */
+    public static function importFromPostAction(): Action
+    {
+        return Action::make('importPost')
+            ->label(__('admin.import.action'))
+            ->icon(Heroicon::OutlinedPhoto)
+            ->color('gray')
+            ->visible(fn (): bool => static::canCreate())
+            ->modalIcon(Heroicon::OutlinedPhoto)
+            ->modalHeading(__('admin.import.heading'))
+            ->modalDescription(__('admin.import.description'))
+            ->modalWidth(Width::ThreeExtraLarge)
+            ->modalSubmitActionLabel(__('admin.import.submit'))
+            ->schema([
+                TextInput::make('post_url')->label(admin_field('source_post_url'))
+                    ->url()->required()->maxLength(2048)
+                    ->placeholder('https://www.facebook.com/…')
+                    ->helperText(__('admin.import.link_help'))
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(function (?string $state, Set $set): void {
+                        if ($source = ImportFlyerFromPost::guessSource($state)) {
+                            $set('retailer_id', $source->retailer_id);
+                            $set('flyer_source_id', $source->id);
+                        }
+                    })
+                    ->suffixAction(static::openLinkAction()),
+                Section::make()->columns(2)->schema([
+                    Select::make('retailer_id')->label(admin_field('retailer'))
+                        ->options(fn () => Retailer::query()
+                            ->whereHas('sources', fn (Builder $query) => $query->approved())
+                            ->orderBy('name_en')
+                            ->pluck('name_en', 'id'))
+                        ->searchable()->required()->live()
+                        ->helperText(__('admin.import.store_help'))
+                        ->afterStateUpdated(fn (mixed $state, Set $set) => $set('flyer_source_id', ImportFlyerFromPost::bestSourceFor(filled($state) ? (int) $state : null)?->id)),
+                    Select::make('flyer_source_id')->label(admin_field('source'))
+                        ->options(fn (Get $get) => static::approvedSourceOptions($get('retailer_id')))
+                        ->rule(fn (Get $get) => static::approvedSourceRule($get('retailer_id')))
+                        ->required()->native(false),
+                ]),
+                FileUpload::make('images')->label(admin_field('post_images'))
+                    ->helperText(__('admin.import.images_help'))
+                    ->disk('local')->directory('uploads/flyers')->visibility('private')
+                    ->multiple()->reorderable()->appendFiles()->panelLayout('grid')
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->maxFiles(40)
+                    ->maxSize(config('qdealme.max_upload_mb') * 1024)
+                    ->required(),
+                Textarea::make('caption')->label(admin_field('post_text'))->rows(3)
+                    ->helperText(__('admin.import.caption_help'))
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(function (?string $state, Set $set): void {
+                        if ($dates = PostDates::find($state)) {
+                            $set('valid_from', $dates['from']->toDateString());
+                            $set('valid_until', $dates['until']->toDateString());
+                        }
+                    }),
+                Section::make()->columns(2)->schema([
+                    DatePicker::make('valid_from')->label(admin_field('valid_from'))->required()->native(false)
+                        ->default(fn () => today(config('qdealme.timezone'))->toDateString()),
+                    DatePicker::make('valid_until')->label(admin_field('valid_until'))->required()->native(false)
+                        ->default(fn () => today(config('qdealme.timezone'))->addDays(6)->toDateString())
+                        ->afterOrEqual('valid_from'),
+                    TextInput::make('title_ar')->label(admin_field('title_ar'))->maxLength(160)
+                        ->placeholder(fn (Get $get) => static::defaultTitle($get('retailer_id'), 'ar'))
+                        ->extraInputAttributes(['dir' => 'rtl']),
+                    TextInput::make('title_en')->label(admin_field('title_en'))->maxLength(160)
+                        ->placeholder(fn (Get $get) => static::defaultTitle($get('retailer_id'), 'en')),
+                ]),
+            ])
+            ->action(fn (array $data, Component $livewire) => static::importFromPost($data, $livewire));
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public static function importFromPost(array $data, Component $livewire): void
+    {
+        $paths = array_values(array_filter((array) ($data['images'] ?? [])));
+        $source = FlyerSource::query()->approved()->where('retailer_id', $data['retailer_id'] ?? null)->find($data['flyer_source_id'] ?? null);
+        $timezone = config('qdealme.timezone');
+
+        try {
+            if ($source === null) {
+                throw PostImportException::because('not_approved');
+            }
+
+            $flyer = app(ImportFlyerFromPost::class)->handle($source, $paths, $data['post_url'] ?? null, [
+                'title_en' => $data['title_en'] ?? null,
+                'title_ar' => $data['title_ar'] ?? null,
+                'valid_from' => filled($data['valid_from'] ?? null) ? CarbonImmutable::parse($data['valid_from'], $timezone) : null,
+                'valid_until' => filled($data['valid_until'] ?? null) ? CarbonImmutable::parse($data['valid_until'], $timezone) : null,
+            ]);
+        } catch (PostImportException $e) {
+            // Nothing was imported, so the uploaded copies are not needed.
+            Storage::disk('local')->delete($paths);
+
+            $notification = Notification::make()->warning()->title(__('admin.import.failed'))->body($e->getMessage())->persistent();
+
+            if ($e->existing !== null) {
+                $notification->actions([
+                    Action::make('openExisting')->label(__('admin.import.open_existing'))->button()
+                        ->url(static::getUrl('edit', ['record' => $e->existing])),
+                ]);
+            }
+
+            $notification->send();
+
+            return;
+        }
+
+        Notification::make()->success()->title(__('admin.import.created'))->body(__('admin.import.created_hint'))->send();
+        $livewire->redirect(static::getUrl('edit', ['record' => $flyer]));
+    }
+
+    /**
+     * The title a draft gets when staff leave it empty, shown as the hint.
+     */
+    private static function defaultTitle(mixed $retailerId, string $locale): ?string
+    {
+        $retailer = filled($retailerId) ? Retailer::query()->find($retailerId) : null;
+
+        return $retailer ? __('feed.default_title', ['store' => $locale === 'ar' ? $retailer->name_ar : $retailer->name_en], $locale) : null;
+    }
+
+    private static function openLinkAction(): Action
+    {
+        return Action::make('openLink')
+            ->label(__('admin.import.open_link'))
+            ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+            ->url(fn (?string $state) => filled($state) && str_starts_with($state, 'https://') ? $state : null, shouldOpenInNewTab: true)
+            ->visible(fn (?string $state) => filled($state) && str_starts_with($state, 'https://'));
     }
 
     public static function approveAction(): Action

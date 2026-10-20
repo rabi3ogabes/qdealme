@@ -56,6 +56,7 @@ class Dashboard extends BaseDashboard
                 ->modalIcon(Heroicon::OutlinedArrowDownTray)
                 ->modalDescription(fn (): string => __('admin.pull_all_confirm', ['count' => PullAllFeeds::pullable()->count()]))
                 ->action(fn () => FlyerSourceResource::pullMany()),
+            FlyerResource::importFromPostAction(),
             Action::make('reviewQueue')
                 ->label(__('admin.dashboard.open_review_queue'))
                 ->icon(Heroicon::OutlinedEye)

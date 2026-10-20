@@ -9,6 +9,7 @@ enum SourceType: string implements HasLabel
     case RetailerUpload = 'retailer_upload';
     case AdminUpload = 'admin_upload';
     case RetailerFeed = 'retailer_feed';
+    case SocialMedia = 'social_media';
 
     public function label(): string
     {

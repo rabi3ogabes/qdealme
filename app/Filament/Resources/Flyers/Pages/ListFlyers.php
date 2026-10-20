@@ -15,7 +15,7 @@ class ListFlyers extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [CreateAction::make()];
+        return [FlyerResource::importFromPostAction(), CreateAction::make()];
     }
 
     public function getTabs(): array
