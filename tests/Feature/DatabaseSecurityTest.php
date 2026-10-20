@@ -18,6 +18,17 @@ class DatabaseSecurityTest extends TestCase
         $this->assertSame([], $unprotected, 'Tables without row-level security: '.implode(', ', $unprotected));
     }
 
+    public function test_licence_guard_function_has_a_fixed_search_path(): void
+    {
+        $config = DB::selectOne(
+            "SELECT p.proconfig FROM pg_proc p
+             JOIN pg_namespace n ON n.oid = p.pronamespace
+             WHERE n.nspname = current_schema() AND p.proname = 'qdealme_assert_flyer_source_approved'"
+        )->proconfig;
+
+        $this->assertStringContainsString('search_path=', (string) $config);
+    }
+
     public function test_the_app_still_reads_and_writes_with_rls_enabled(): void
     {
         $flyer = $this->makeFlyer();
