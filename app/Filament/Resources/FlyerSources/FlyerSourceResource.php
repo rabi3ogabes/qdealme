@@ -4,6 +4,7 @@ namespace App\Filament\Resources\FlyerSources;
 
 use App\Actions\Flyers\PullAllFeeds;
 use App\Actions\Flyers\PullLatestFlyer;
+use App\Actions\Flyers\PullSocialPosts;
 use App\Actions\Flyers\RevokeFlyerSource;
 use App\Enums\LicenseStatus;
 use App\Enums\SourceType;
@@ -13,6 +14,7 @@ use App\Filament\Concerns\AdminNavigation;
 use App\Filament\Resources\Flyers\FlyerResource;
 use App\Filament\Resources\FlyerSources\Pages\ManageFlyerSources;
 use App\Models\FlyerSource;
+use App\Services\SocialPostsClient;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -22,6 +24,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
@@ -84,7 +87,7 @@ class FlyerSourceResource extends Resource
                 ->visible(fn (Get $get) => static::isFeedType($get('type'))),
             TextInput::make('page_url')->label(admin_field('page_url'))->url()->maxLength(2048)->columnSpanFull()
                 ->placeholder('https://www.facebook.com/…')
-                ->helperText(__('admin.import.page_help'))
+                ->helperText(fn (): string => __(SocialPostsClient::isConfigured() ? 'admin.import.page_help_auto' : 'admin.import.page_help'))
                 ->visible(fn (Get $get) => in_array($get('type'), [SourceType::SocialMedia, SourceType::SocialMedia->value], true)),
             Textarea::make('notes')->label(admin_field('notes'))->rows(3)->columnSpanFull(),
         ]);
@@ -103,6 +106,8 @@ class FlyerSourceResource extends Resource
                 TextColumn::make('approved_at')->label(admin_field('approved_at'))->dateTime()->sortable(),
                 TextColumn::make('last_pulled_at')->label(admin_field('last_pulled_at'))->dateTime()->sortable()
                     ->description(fn (FlyerSource $record) => $record->last_pull_error)
+                    ->toggleable(),
+                TextColumn::make('last_uploaded_at')->label(admin_field('last_uploaded_at'))->since()->sortable()
                     ->toggleable(),
             ])
             ->filters([
@@ -132,6 +137,7 @@ class FlyerSourceResource extends Resource
                         $count = $revoke->handle($s, $data['reason']);
                         Notification::make()->warning()->title(__('admin.revoke_source'))->body((string) $count)->send();
                     }),
+                static::uploadLinkAction(),
                 Action::make('pull')
                     ->label(__('admin.pull_latest'))
                     ->icon(Heroicon::OutlinedArrowDownTray)->color('primary')
@@ -151,6 +157,80 @@ class FlyerSourceResource extends Resource
                         ->action(fn (Collection $records) => static::pullMany($records)),
                 ]),
             ]);
+    }
+
+    /**
+     * The private link where the store's own team sends its flyer: copy it,
+     * send it on WhatsApp or by email, or replace it with a new one.
+     */
+    public static function uploadLinkAction(): Action
+    {
+        return Action::make('uploadLink')
+            ->label(__('admin.upload_link.action'))
+            ->icon(Heroicon::OutlinedLink)
+            ->color('gray')
+            ->visible(fn (FlyerSource $record): bool => static::canManageLicences() && $record->isApproved())
+            ->modalIcon(Heroicon::OutlinedLink)
+            ->modalHeading(fn (FlyerSource $record): string => __('admin.upload_link.heading', ['store' => (string) $record->retailer?->name]))
+            ->modalDescription(__('admin.upload_link.description'))
+            ->schema(fn (FlyerSource $record): array => [
+                TextEntry::make('link')
+                    ->label(admin_field('upload_link'))
+                    ->state($record->uploadUrl())
+                    ->copyable()
+                    ->copyMessage(__('admin.upload_link.copied'))
+                    ->extraAttributes(['dir' => 'ltr']),
+                TextEntry::make('last_upload')
+                    ->label(admin_field('last_uploaded_at'))
+                    ->state($record->last_uploaded_at?->diffForHumans() ?? __('admin.upload_link.never')),
+            ])
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel(__('admin.upload_link.close'))
+            ->extraModalFooterActions(fn (FlyerSource $record): array => [
+                Action::make('whatsapp')
+                    ->label(__('admin.upload_link.whatsapp'))
+                    ->icon(Heroicon::OutlinedChatBubbleLeftRight)
+                    ->color('success')
+                    ->url('https://wa.me/?text='.rawurlencode(static::uploadLinkMessage($record)), shouldOpenInNewTab: true),
+                Action::make('email')
+                    ->label(__('admin.upload_link.email'))
+                    ->icon(Heroicon::OutlinedEnvelope)
+                    ->color('gray')
+                    ->url(static::uploadLinkMailto($record), shouldOpenInNewTab: true),
+                Action::make('rotate')
+                    ->label(__('admin.upload_link.rotate'))
+                    ->icon(Heroicon::OutlinedArrowPath)
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription(__('admin.upload_link.rotate_confirm'))
+                    ->action(function () use ($record): void {
+                        $record->rotateUploadToken();
+                        Notification::make()->success()->title(__('admin.upload_link.rotated'))->send();
+                    }),
+            ]);
+    }
+
+    /**
+     * A ready-to-send bilingual message with the store's upload link.
+     */
+    public static function uploadLinkMessage(FlyerSource $source): string
+    {
+        $url = $source->uploadUrl();
+        $retailer = $source->retailer;
+
+        return __('admin.upload_link.message', ['store' => (string) $retailer?->name_ar, 'url' => $url], 'ar')
+            ."\n\n"
+            .__('admin.upload_link.message', ['store' => (string) $retailer?->name_en, 'url' => $url], 'en');
+    }
+
+    private static function uploadLinkMailto(FlyerSource $source): string
+    {
+        $contact = (string) $source->permission_contact;
+        $to = filter_var($contact, FILTER_VALIDATE_EMAIL) ? $contact : '';
+
+        return 'mailto:'.rawurlencode($to)
+            .'?subject='.rawurlencode(__('admin.upload_link.email_subject', ['store' => (string) $source->retailer?->name_en], 'en'))
+            .'&body='.rawurlencode(static::uploadLinkMessage($source));
     }
 
     /**
@@ -194,7 +274,7 @@ class FlyerSourceResource extends Resource
 
     public static function canPull(FlyerSource $source): bool
     {
-        return $source->type === SourceType::RetailerFeed && $source->isApproved() && filled($source->feed_url);
+        return PullAllFeeds::isPullable($source);
     }
 
     /**
@@ -202,22 +282,33 @@ class FlyerSourceResource extends Resource
      */
     public static function pull(FlyerSource $source, Component $livewire): void
     {
+        $isSocial = $source->type === SourceType::SocialMedia;
+
         try {
-            $flyer = app(PullLatestFlyer::class)->handle($source);
+            $flyers = $isSocial
+                ? app(PullSocialPosts::class)->handle($source)
+                : array_filter([app(PullLatestFlyer::class)->handle($source)]);
         } catch (FeedPullException $e) {
             Notification::make()->danger()->title(__('admin.pull_failed'))->body($e->getMessage())->persistent()->send();
 
             return;
         }
 
-        if ($flyer === null) {
-            Notification::make()->info()->title(__('admin.pull_unchanged'))->send();
+        if ($flyers === []) {
+            Notification::make()->info()->title(__($isSocial ? 'admin.pull_no_new_posts' : 'admin.pull_unchanged'))->send();
 
             return;
         }
 
-        Notification::make()->success()->title(__('admin.pull_created'))->send();
-        $livewire->redirect(FlyerResource::getUrl('edit', ['record' => $flyer]));
+        if (count($flyers) === 1) {
+            Notification::make()->success()->title(__('admin.pull_created'))->send();
+            $livewire->redirect(FlyerResource::getUrl('edit', ['record' => reset($flyers)]));
+
+            return;
+        }
+
+        Notification::make()->success()->title(__('admin.pull_created_many', ['count' => count($flyers)]))->send();
+        $livewire->redirect(FlyerResource::getUrl('index'));
     }
 
     public static function getPages(): array

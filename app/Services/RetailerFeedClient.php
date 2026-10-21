@@ -53,6 +53,24 @@ class RetailerFeedClient
     }
 
     /**
+     * Downloads one flyer page image from any public https address, with the
+     * same safety rules as feed pulls. Used for the images that Meta's API
+     * lists for a store's post.
+     *
+     * @return array{bytes: string, ext: string}
+     */
+    public function downloadImage(string $url): array
+    {
+        $file = $this->asFlyerFile($this->download($url));
+
+        if ($file === null || $file['ext'] === 'pdf') {
+            throw FeedPullException::because('page_not_image', ['url' => $url]);
+        }
+
+        return $file;
+    }
+
+    /**
      * @return array{files: array<int, array{bytes: string, ext: string}>, title_en: ?string, title_ar: ?string, valid_from: ?Carbon, valid_until: ?Carbon}
      */
     private function fromManifest(string $body): array

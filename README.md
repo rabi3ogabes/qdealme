@@ -30,6 +30,8 @@ See [docs/BRAND.md](docs/BRAND.md) for the slogan shortlist and visual identity.
 - Flyers can only come from approved sources, enforced in the form, the model, the publish action and a PostgreSQL trigger ([ADR 002](docs/decisions/002-lawful-sourcing.md))
 - Staff can pull a store's current flyer from the official link on its own website into a draft for review ([docs/RETAILER-FEEDS.md](docs/RETAILER-FEEDS.md))
 - Staff can import a flyer that a store posted on its own Facebook or Instagram page: paste the post link, drop in the images, and the store and offer dates are filled in automatically (same doc)
+- Each store can get a private upload link: whatever its own team uploads there arrives as a draft, with no work for staff (same doc)
+- With Meta's approval, new flyer posts on a store's official Facebook page or Instagram account are imported as drafts automatically every day, through Meta's official Graph API (same doc)
 - Only verified prices appear in deals, search and product pages
 - Rate-limited forms with a honeypot, security headers, no third-party trackers, staff avatars rendered locally
 

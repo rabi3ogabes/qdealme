@@ -14,4 +14,9 @@ A **retailer feed** source can hold the official link where the store publishes 
 
 Many Qatar stores publish their weekly flyer as a post on their own Facebook or Instagram page. A **social media** source records the store's permission and its official page. Staff then import a post with **Import from a store post** (`ImportFlyerFromPost`): they paste the post link and add the post's images themselves. QDealMe never downloads from social networks, because their terms forbid automated collection. Only the store's own posts may be imported, the source must be approved, the result is a draft for review, and the same post or the same images cannot be imported twice.
 
+Two routes need no manual work from staff, and both stay within these rules:
+
+- **Store upload link.** Each approved source can have a private link (`/store/upload/{token}`). The store's own team uploads its flyer there, and it arrives as a draft. The link is a long random token tied to the approved source. It stops working when the licence is revoked or staff issue a new link.
+- **Meta's official Graph API.** `PullSocialPosts` reads a store's official Facebook page or Instagram account through the API, never by loading facebook.com or instagram.com. Reading another business's page requires Meta's approval of QDealMe's app: Page Public Content Access for Facebook, and Advanced Access for Instagram business discovery. It still needs the store's approved permission, and it creates drafts for review.
+
 The demo stores in `DemoContentSeeder` are fictional and their flyers are generated images, so even demo data contains no third-party content.

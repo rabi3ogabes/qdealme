@@ -746,6 +746,16 @@
     color: rgb(250 240 207 / 0.62);
 }
 
+.qd-simple-footer-link {
+    color: rgb(250 240 207 / 0.9);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.qd-simple-footer-link:hover {
+    color: #fff;
+}
+
 /* ---------------------------------------------------------------- Helpers */
 
 [dir='rtl'] .qd-flip-rtl {

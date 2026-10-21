@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Retailers;
 
+use App\Actions\Flyers\PullAllFeeds;
 use App\Enums\RetailerType;
-use App\Enums\SourceType;
 use App\Filament\Concerns\AdminNavigation;
 use App\Filament\Resources\FlyerSources\FlyerSourceResource;
 use App\Filament\Resources\Retailers\Pages\CreateRetailer;
@@ -134,15 +134,13 @@ class RetailerResource extends Resource
     }
 
     /**
-     * The store's approved feed with an official flyer link, if it has one.
+     * The store's newest approved source that can be pulled: an official flyer
+     * link, or an official Facebook or Instagram page when Meta's API is set up.
      */
     public static function feedSource(Retailer $retailer): ?FlyerSource
     {
-        return $retailer->sources()->approved()
-            ->where('type', SourceType::RetailerFeed->value)
-            ->whereNotNull('feed_url')
-            ->latest('approved_at')
-            ->first();
+        return $retailer->sources()->approved()->latest('approved_at')->get()
+            ->first(fn (FlyerSource $source): bool => PullAllFeeds::isPullable($source));
     }
 
     public static function getRelations(): array

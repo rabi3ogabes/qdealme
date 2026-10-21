@@ -17,5 +17,13 @@ return [
         'page_not_image' => 'إحدى الصفحات في ملف الوصف ليست صورة JPG أو PNG أو WebP (:url).',
         'unexpected' => 'حدث خطأ غير متوقع أثناء سحب هذه النشرة. تم تسجيل الخطأ.',
         'pdf_unsupported' => 'المتجر ينشر ملف PDF، لكن هذا الخادم لا يستطيع تحويل ملفات PDF. اطلب من المتجر صور الصفحات أو ملف وصف للنشرة.',
+        'no_social_page' => 'أضف رابط صفحة المتجر الرسمية على فيسبوك (أو حسابه على إنستغرام) إلى هذا المصدر.',
+        'social_not_configured' => 'لم يتم إعداد الاستيراد من فيسبوك وإنستغرام بعد. أضف META_ACCESS_TOKEN (راجع docs/RETAILER-FEEDS.md).',
+        'social_unsupported_page' => 'يجب أن يكون رابط الصفحة الرسمية صفحة فيسبوك، أو حساب إنستغرام بعد إعداد إنستغرام.',
+        'social_page_not_found' => 'لم تجد Meta هذه الصفحة. تحقق من رابط الصفحة الرسمية.',
+        'social_needs_approval' => 'لم توافق Meta بعد على تطبيق QDealMe لقراءة هذه الصفحة (Page Public Content Access لفيسبوك، وAdvanced Access لإنستغرام).',
+        'social_token' => 'رمز الوصول من Meta غير صالح أو منتهي الصلاحية. أنشئ رمزاً جديداً وحدّث META_ACCESS_TOKEN.',
+        'social_unreachable' => 'تعذّر الوصول إلى واجهة Meta. ستتم المحاولة مرة أخرى في السحب التالي.',
+        'social_api' => 'ردّت واجهة Meta: :message',
     ],
 ];

@@ -13,9 +13,10 @@ use Illuminate\Support\Str;
 
 /**
  * Imports a flyer that a store published in a post on its own social media
- * page or website. Staff save the post's flyer images and drop them in; the
- * post link is kept for reference. QDealMe never downloads from social
- * networks itself: their terms forbid automated collection (ADR 002).
+ * page or website, or sent through its private upload link. The images come
+ * from staff, from the store itself, or from Meta's official API
+ * (PullSocialPosts); QDealMe never loads social network pages itself, as
+ * their terms forbid automated collection (ADR 002).
  *
  * The flyer is created as a draft under the store's approved source, and
  * the same post or the same images are never imported twice.

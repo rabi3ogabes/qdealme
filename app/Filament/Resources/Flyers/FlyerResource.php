@@ -4,14 +4,17 @@ namespace App\Filament\Resources\Flyers;
 
 use App\Actions\Flyers\ImportFlyerFromPost;
 use App\Actions\Flyers\PublishFlyer;
+use App\Actions\Flyers\PullAllFeeds;
 use App\Enums\FlyerStatus;
 use App\Enums\LicenseStatus;
+use App\Enums\SourceType;
 use App\Exceptions\PostImportException;
 use App\Filament\Concerns\AdminNavigation;
 use App\Filament\Resources\Flyers\Pages\CreateFlyer;
 use App\Filament\Resources\Flyers\Pages\EditFlyer;
 use App\Filament\Resources\Flyers\Pages\ListFlyers;
 use App\Filament\Resources\Flyers\RelationManagers\OffersRelationManager;
+use App\Filament\Resources\FlyerSources\FlyerSourceResource;
 use App\Jobs\ProcessFlyerUpload;
 use App\Models\Flyer;
 use App\Models\FlyerSource;
@@ -32,6 +35,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Callout;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -253,6 +257,32 @@ class FlyerResource extends Resource
                         ->rule(fn (Get $get) => static::approvedSourceRule($get('retailer_id')))
                         ->required()->native(false),
                 ]),
+                Callout::make(__('admin.import.connected'))
+                    ->description(__('admin.import.connected_hint'))
+                    ->icon(Heroicon::OutlinedBolt)
+                    ->success()
+                    ->visible(fn (Get $get): bool => static::connectedSource($get('flyer_source_id')) !== null)
+                    ->actions([
+                        Action::make('checkNow')
+                            ->label(__('admin.import.check_now'))
+                            ->icon(Heroicon::OutlinedArrowPath)
+                            ->action(function (Get $get, Component $livewire): void {
+                                if ($source = static::connectedSource($get('flyer_source_id'))) {
+                                    FlyerSourceResource::pull($source, $livewire);
+                                }
+                            }),
+                    ]),
+                Callout::make(__('admin.import.automate'))
+                    ->description(__('admin.import.automate_hint'))
+                    ->icon(Heroicon::OutlinedSparkles)
+                    ->info()
+                    ->visible(fn (Get $get): bool => filled($get('flyer_source_id')) && static::connectedSource($get('flyer_source_id')) === null)
+                    ->actions([
+                        Action::make('openSources')
+                            ->label(__('admin.import.open_sources'))
+                            ->url(fn (): string => FlyerSourceResource::getUrl('index'))
+                            ->openUrlInNewTab(),
+                    ]),
                 FileUpload::make('images')->label(admin_field('post_images'))
                     ->helperText(__('admin.import.images_help'))
                     ->disk('local')->directory('uploads/flyers')->visibility('private')
@@ -284,6 +314,16 @@ class FlyerResource extends Resource
                 ]),
             ])
             ->action(fn (array $data, Component $livewire) => static::importFromPost($data, $livewire));
+    }
+
+    /**
+     * The chosen source when it is a store page that Meta's API reads by itself.
+     */
+    public static function connectedSource(mixed $sourceId): ?FlyerSource
+    {
+        $source = filled($sourceId) ? FlyerSource::query()->find($sourceId) : null;
+
+        return $source?->type === SourceType::SocialMedia && PullAllFeeds::isPullable($source) ? $source : null;
     }
 
     /**

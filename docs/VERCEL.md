@@ -12,7 +12,7 @@ A regular PHP server (see the README's production section) has fewer limits. Cho
 | Flyer uploads as JPG, PNG or WebP | Yes, with resized copies | Yes, stored as uploaded |
 | Flyer uploads as PDF | Yes | No: Vercel has no PDF tool, so the admin only offers images |
 | Automatic publish and expiry | Every 15 minutes | Once a day at 00:05 Qatar time (Vercel Cron) |
-| Pulling approved store feeds | Daily at 06:00 Qatar time | Daily at 06:00 Qatar time (Vercel Cron) |
+| Pulling approved store feeds and connected Facebook/Instagram pages | Daily at 06:00 Qatar time | Daily at 06:00 Qatar time (Vercel Cron) |
 | Fictional demo stores (`DemoContentSeeder`) | Yes | Seed them from your computer (step 5) |
 
 ## 1. A database
@@ -57,6 +57,9 @@ In **Project → Settings → Environment Variables**, add:
 | `MEDIA_PUBLIC_URL` | `https://media.qdealme.com` (the public bucket's address) |
 | `CRON_SECRET` | Any long random text; Vercel Cron sends it automatically |
 | `DB_URL` | Only for Supabase; Neon sets `POSTGRES_URL` itself |
+| `META_ACCESS_TOKEN` | Optional. Turns on the automatic Facebook/Instagram import; see [RETAILER-FEEDS.md](RETAILER-FEEDS.md#automatic-import-from-facebook-and-instagram) |
+| `META_APP_SECRET` | Optional. Your Meta app's secret, used to sign every call |
+| `META_INSTAGRAM_ACCOUNT_ID` | Optional. QDealMe's own Instagram professional account ID, for importing stores' Instagram posts |
 
 `api/index.php` sets the remaining serverless settings. These cover caches in `/tmp`, logs to Vercel, sessions and cache in the database, `MEDIA_STORAGE=cloud` and `QDEALME_IMAGE_PROCESSING=basic`. You don't need to add them.
 

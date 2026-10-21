@@ -101,4 +101,29 @@ return [
     */
 
     'cron_secret' => env('CRON_SECRET', ''),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Facebook and Instagram (Meta's official Graph API)
+    |--------------------------------------------------------------------------
+    |
+    | With a token from QDealMe's own Meta app, new flyer posts on the official
+    | page of a store with an approved "social media" source are imported as
+    | drafts automatically. Reading other businesses' pages needs Meta's
+    | approval (Page Public Content Access for Facebook, Advanced Access for
+    | Instagram business discovery); see docs/RETAILER-FEEDS.md. Leave the
+    | token empty to switch this off.
+    |
+    */
+
+    'meta' => [
+        'graph_url' => env('META_GRAPH_URL', 'https://graph.facebook.com'),
+        'version' => env('META_GRAPH_VERSION', 'v23.0'),
+        'access_token' => env('META_ACCESS_TOKEN', ''),
+        'app_secret' => env('META_APP_SECRET', ''),
+        // QDealMe's own Instagram professional account, used to look up stores' public Instagram posts.
+        'instagram_account_id' => env('META_INSTAGRAM_ACCOUNT_ID', ''),
+        // Posts older than this are never imported.
+        'max_post_age_days' => (int) env('META_MAX_POST_AGE_DAYS', 10),
+    ],
 ];
